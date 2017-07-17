@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpDX;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,7 @@ namespace SoftEngine
         public int A;
         public int B;
         public int C;
+
+        public Vector3 Normal;
     }
 }

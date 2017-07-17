@@ -27,7 +27,6 @@ namespace SoftEngine
         private Device device;
         Mesh mesh = new Mesh("Cube", 8, 12);
         Camera mera = new Camera();
-        int showFpsCounter = 0;
         Stopwatch fpsWatcher = new Stopwatch();
         Stopwatch fpsUpdateLabelWatcher = new Stopwatch();
 
@@ -41,8 +40,9 @@ namespace SoftEngine
             // Our Image XAML control
             frontBuffer.Source = bmp;
 
-            mesh.Vertices[0] = new Vector3(-1, 1, 1);
-            mesh.Vertices[1] = new Vector3(1, 1, 1);
+            /*
+            mesh.Vertices[0] = new Vertex(-1, 1, 1);
+            mesh.Vertices[1] = new Vertex(1, 1, 1);
             mesh.Vertices[2] = new Vector3(-1, -1, 1);
             mesh.Vertices[3] = new Vector3(1, -1, 1);
             mesh.Vertices[4] = new Vector3(-1, 1, -1);
@@ -63,6 +63,7 @@ namespace SoftEngine
             mesh.Faces[9] = new Face { A = 0, B = 4, C = 7 };
             mesh.Faces[10] = new Face { A = 4, B = 5, C = 6 };
             mesh.Faces[11] = new Face { A = 4, B = 6, C = 7 };
+            */
 
             mera.Position = new Vector3(0, 0, 10.0f);
             mera.Target = Vector3.Zero;
@@ -167,14 +168,28 @@ namespace SoftEngine
                         vertices[actualVertice, 1] = float.Parse(splitted[1].Replace('.', ','));  //y
                         vertices[actualVertice, 2] = float.Parse(splitted[2].Replace('.', ','));  //z
 
+                        var x = (float)vertices[actualVertice, 0];
+                        var y = (float)vertices[actualVertice, 1];
+                        var z = (float)vertices[actualVertice, 2];
+                        // Loading the vertex normal exported by Blender
+
+                        // TODO
+                        // normal preparing
+                        // how to?
+                        
+                        var nx = (float)0;
+                        var ny = (float)0;
+                        var nz = (float)0;
+                        
                         // TODO
                         // should be divided by max abs value?
                         // 
                         // notice there is minus
-                        mesh.Vertices[actualVertice] = new Vector3(
-                            -vertices[actualVertice, 0],
-                            -vertices[actualVertice, 1],
-                            -vertices[actualVertice, 2]);
+                        mesh.Vertices[actualVertice] = new Vertex
+                        {
+                            Coordinates = new Vector3(x, y, z),
+                            Normal = new Vector3(nx, ny, nz)
+                        };
 
                         actualVertice++;
                         continue;
@@ -203,6 +218,41 @@ namespace SoftEngine
                         actualFacet++;
                         continue;
                     }
+                }
+
+                // here set normal vector for every facet
+                for (int i = 0; i < mesh.Faces.Length; ++i)
+                {
+                    Face face = mesh.Faces[i];
+                    Vector3 p1 = mesh.Vertices[face.A].Coordinates;
+                    Vector3 p2 = mesh.Vertices[face.B].Coordinates;
+                    Vector3 p3 = mesh.Vertices[face.C].Coordinates;
+
+                    Vector3 u = p2 - p1;
+                    Vector3 v = p3 - p1;
+
+                    float nx = u.Y * v.Z - u.Z * v.Y;
+                    float ny = u.Z * v.X - u.X * v.Z;
+                    float nz = u.X * v.Y - u.Y * v.X;
+
+                    mesh.Faces[i].Normal = new Vector3(nx, ny, nz);
+                }
+
+                // here set normal for every vertex
+                for (int i = 0; i < mesh.Faces.Length; ++i)
+                {
+                    Face face = mesh.Faces[i];
+                    mesh.Vertices[face.A].Normal += face.Normal;
+                    mesh.Vertices[face.B].Normal += face.Normal;
+                    mesh.Vertices[face.C].Normal += face.Normal;
+                }
+
+                for (int i = 0; i < mesh.Faces.Length; ++i)
+                {
+                    Face face = mesh.Faces[i];
+                    mesh.Vertices[face.A].Normal.Normalize();
+                    mesh.Vertices[face.B].Normal.Normalize();
+                    mesh.Vertices[face.C].Normal.Normalize();
                 }
             }
 
