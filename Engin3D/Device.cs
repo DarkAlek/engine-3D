@@ -341,6 +341,16 @@ namespace SoftEngine
                 }
             }
         }
+
+        private float Angle(Vector3 v1, Vector3 v2)
+        {
+            v1.Normalize();
+            v2.Normalize();
+            var cosA = Vector3.Dot(v1, v2);
+
+            return cosA;
+        }
+
         // The main method of the engine that re-compute each vertex projection
         // during each frame
         public void Render(Camera camera, params Mesh[] meshes)
@@ -364,10 +374,11 @@ namespace SoftEngine
                 foreach (var face in mesh.Faces)
                 {
                     // BACK-FACE CULLING
-                    face.Normal.Normalize();
-                    var transformedNormal = Vector3.TransformNormal(face.Normal, worldView);
+                    Vector3 normalR = Vector3.TransformCoordinate(face.Normal, worldMatrix);
+                    Vector3 cameraPos = camera.Position - mesh.Vertices[face.A].WorldCoordinates;
+                    float angle = Angle(normalR, cameraPos);
 
-                    if (transformedNormal.Z - 0.2f>= 0)
+                    if (angle > 90)
                         continue;
                     // END 
 
