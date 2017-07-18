@@ -70,6 +70,7 @@
     </ApplicationDefinition>
     <Compile Include="Face.cs" />
     <Compile Include="ScanLineData.cs" />
+    <Compile Include="Texture.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

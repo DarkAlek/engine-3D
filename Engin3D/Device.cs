@@ -16,6 +16,7 @@ namespace SoftEngine
         private WriteableBitmap bmp;
         private readonly int renderWidth;
         private readonly int renderHeight;
+        Vector3 lightPos = new Vector3(0, 1, 1);
 
         public Device(WriteableBitmap bmp)
         {
@@ -85,6 +86,11 @@ namespace SoftEngine
             return min + (max - min) * Clamp(gradient);
         }
 
+        Vector3 Interpolate(Vector3 min, Vector3 max, float gradient)
+        {
+            return min + (max - min) * Clamp(gradient);
+        }
+
         void ProcessScanLine(ScanLineData data, Vertex va, Vertex vb, Vertex vc, Vertex vd, Color4 color)
         {
             Vector3 pa = va.Coordinates;
@@ -105,8 +111,16 @@ namespace SoftEngine
             float z1 = Interpolate(pa.Z, pb.Z, gradient1);
             float z2 = Interpolate(pc.Z, pd.Z, gradient2);
 
+            /*
             var snl = Interpolate(data.ndotla, data.ndotlb, gradient1);
             var enl = Interpolate(data.ndotlc, data.ndotld, gradient2);
+            */
+
+            // TEST DRIVEN
+            var sNormal = Interpolate(va.Normal, vb.Normal, gradient1);
+            var eNormal = Interpolate(vc.Normal, vd.Normal, gradient2);
+
+            // END OF
 
             // drawing a line from left (sx) to right (ex) 
             for (var x = sx; x < ex; x++)
@@ -114,10 +128,34 @@ namespace SoftEngine
                 float gradient = (x - sx) / (float)(ex - sx);
 
                 var z = Interpolate(z1, z2, gradient);
-                var ndotl = Interpolate(snl, enl, gradient);
+                var pNormal = Interpolate(sNormal, eNormal, gradient);
+
+                /*
                 // changing the color value using the cosine of the angle
                 // between the light vector and the normal vector
                 DrawPoint(new Vector3(x, data.currentY, z), color * ndotl);
+                */
+
+                // TEST DRIVEN
+
+                var L = lightPos;
+                var n = pNormal;
+                var R = new Vector3(0.5f, 0.3f, 0.4f); // TODO reflection
+                var A = new Vector3(0.1f, 0.3f, 0.1f);
+                var D = new Vector3(0.3f, 0.8f, 0.6f);
+                var S = new Vector3(0.7f, 0.3f, 0.2f);
+                var p = 1;
+                Vector3 specularMax = Vector3.Max(new Vector3(0, 0, 0), R * L);
+                Vector3 specularPowered = specularMax;
+
+                for (int i = 1; i < p; ++i)
+                    specularPowered *= specularMax;
+
+                Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+                Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
+                DrawPoint(new Vector3(x, data.currentY, z), colorDraw);
+
+                // END OF
             }
         }
 
@@ -209,7 +247,6 @@ namespace SoftEngine
             Vector3 p3 = v3.Coordinates;
 
             // Light position 
-            Vector3 lightPos = new Vector3(0, 10, 10);
             // computing the cos of the angle between the light vector and the normal vector
             // it will return a value between 0 and 1 that will be used as the intensity of the color
             float nl1 = ComputeNDotL(v1.WorldCoordinates, v1.Normal, lightPos);
@@ -320,11 +357,20 @@ namespace SoftEngine
                 var worldMatrix = Matrix.RotationYawPitchRoll(mesh.Rotation.Y, mesh.Rotation.X, mesh.Rotation.Z) *
                                   Matrix.Translation(mesh.Position);
 
+                var worldView = worldMatrix * viewMatrix;
                 var transformMatrix = worldMatrix * viewMatrix * projectionMatrix;
 
                 var faceIndex = 0;
                 foreach (var face in mesh.Faces)
                 {
+                    // BACK-FACE CULLING
+                    face.Normal.Normalize();
+                    var transformedNormal = Vector3.TransformNormal(face.Normal, worldView);
+
+                    if (transformedNormal.Z - 0.2f>= 0)
+                        continue;
+                    // END 
+
                     var vertexA = mesh.Vertices[face.A];
                     var vertexB = mesh.Vertices[face.B];
                     var vertexC = mesh.Vertices[face.C];
@@ -337,7 +383,8 @@ namespace SoftEngine
                     var colorG = 0.25f + (faceIndex % mesh.Faces.Length) * 0.75f / mesh.Faces.Length;
                     var colorB = 0.25f + (faceIndex % mesh.Faces.Length) * 0.75f / mesh.Faces.Length;
 
-                    DrawTriangle(pixelA, pixelB, pixelC, new Color4(colorR, colorG, colorB, 1));
+                    // change color here
+                    DrawTriangle(pixelA, pixelB, pixelC, new Color4(0.0f, 0.0f, 1.0f, 1));
                     faceIndex++;
                 }
             }
