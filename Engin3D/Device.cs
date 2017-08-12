@@ -17,6 +17,7 @@ namespace SoftEngine
         private readonly int renderWidth;
         private readonly int renderHeight;
         Vector3 lightPos = GlobalSettings.lightPos;
+        public Camera cameraWorld;
 
         public Device(WriteableBitmap bmp)
         {
@@ -66,9 +67,9 @@ namespace SoftEngine
 
             depthBuffer[index] = z;
 
-            backBuffer[index4] = (byte)(color.Red * 255);
+            backBuffer[index4] = (byte)(color.Blue * 255);
             backBuffer[index4 + 1] = (byte)(color.Green * 255);
-            backBuffer[index4 + 2] = (byte)(color.Blue * 255);
+            backBuffer[index4 + 2] = (byte)(color.Red * 255);
             backBuffer[index4 + 3] = (byte)(color.Alpha * 255);
         }
 
@@ -141,9 +142,9 @@ namespace SoftEngine
                 // set color in Vector3 using color from method
                 if (GlobalSettings.currentMode == GlobalSettings.viewMode.phongMode)
                 {
-                    var L = GlobalSettings.lightPos;          // can be set as (R, G, B)
+                    var L = GlobalSettings.lightPos;          // can be set as (X, Y, Z)
                     var n = pNormal;
-                    var R = new Vector3(0.5f, 0.3f, 0.4f);    // TODO: leave on last 
+                    var R = 2 * n * Vector3.Dot(n, L) - L;   // TODO: leave on last 
                     var A = GlobalSettings.ambientColor;      // can be set as (R, G, B)
                     var D = GlobalSettings.diffuseColor;      // can be set as (R, G, B)
                     var S = GlobalSettings.specularColor;     // can be set as (R, G, B)

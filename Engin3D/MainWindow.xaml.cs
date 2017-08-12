@@ -40,6 +40,7 @@ namespace SoftEngine
             WriteableBitmap bmp = BitmapFactory.New(600, 480);
 
             device = new Device(bmp);
+            device.cameraWorld = mera;
 
             // Our Image XAML control
             frontBuffer.Source = bmp;
