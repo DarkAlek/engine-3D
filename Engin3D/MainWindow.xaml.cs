@@ -30,6 +30,9 @@ namespace SoftEngine
         Stopwatch fpsWatcher = new Stopwatch();
         Stopwatch fpsUpdateLabelWatcher = new Stopwatch();
 
+        double mouseLastX = double.NaN;
+        double mouseLastY = double.NaN;
+
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             // Choose the back buffer resolution here
@@ -65,6 +68,8 @@ namespace SoftEngine
             mesh.Faces[11] = new Face { A = 4, B = 6, C = 7 };
             */
 
+            MouseWheel += MainWindow_MouseWheel;            
+
             mera.Position = new Vector3(0, 0, 10.0f);
             mera.Target = Vector3.Zero;
 
@@ -75,6 +80,192 @@ namespace SoftEngine
             CompositionTarget.Rendering += CompositionTarget_Rendering;
         }
 
+        private void FrontBuffer_MouseMove(object sender, MouseEventArgs e)
+        {
+            // ADD THIS TO RENDER METHOD
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                mouseLastX = e.GetPosition(frontBuffer).X;
+                mouseLastY = e.GetPosition(frontBuffer).Y;
+
+                return;
+            }
+
+            double xOffset = e.GetPosition(frontBuffer).X - mouseLastX;
+            double yOffset = e.GetPosition(frontBuffer).Y - mouseLastY;
+
+            mouseLastX = e.GetPosition(frontBuffer).X;
+            mouseLastY = e.GetPosition(frontBuffer).Y;
+
+            mera.Position = new Vector3(
+                mera.Position.X,
+                mera.Position.Y + (float)yOffset / 1000,
+                mera.Position.Z
+            );
+
+            mesh.Rotation = new Vector3(
+                mesh.Rotation.X + (float)xOffset/1000,
+                mesh.Rotation.Y,
+                mesh.Rotation.Z
+            );
+        }
+
+        private void MainWindow_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            mera.Position = new Vector3(
+                mera.Position.X,
+                mera.Position.Y,
+                mera.Position.Z + e.Delta / 1000
+            );
+        }
+
+        void MoveCameraXY()
+        {
+            float offset = 0.02f;
+
+            if (Keyboard.IsKeyDown(Key.Up))
+            {
+                mera.Target = new Vector3(
+                mera.Target.X,
+                mera.Target.Y + offset,
+                mera.Target.Z);
+            }
+            else if (Keyboard.IsKeyDown(Key.Down))
+            {
+                mera.Target = new Vector3(
+                mera.Target.X,
+                mera.Target.Y - offset,
+                mera.Target.Z);
+            }
+
+            if (Keyboard.IsKeyDown(Key.Left))
+            {
+                mera.Target = new Vector3(
+                mera.Target.X + offset,
+                mera.Target.Y,
+                mera.Target.Z);
+            }
+            else if (Keyboard.IsKeyDown(Key.Right))
+            {
+                mera.Target = new Vector3(
+                mera.Target.X - offset,
+                mera.Target.Y,
+                mera.Target.Z);
+            }
+        }
+
+        private void MoveCameraRotate()
+        {
+            //var currentX = Mouse.GetPosition(frontBuffer).X;
+            //var currentY = Mouse.GetPosition(frontBuffer).Y;
+            /*
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+            {
+                if (double.IsNaN(mouseLastX))
+                {
+                    mouseLastX = currentX;
+                    mouseLastY = currentY;
+
+                    return;
+                }
+                
+                double xOffset = currentX - mouseLastX;
+                double yOffset = currentY - mouseLastY;
+
+                if (xOffset > 0)
+                    xOffset = 0.03f;
+                else if (xOffset <= 0)
+                    xOffset = -0.03f;
+
+                if (yOffset > 0)
+                    yOffset = 0.03f;
+                else if (yOffset <= 0)
+                    yOffset = -0.03f;
+
+                mesh.Rotation = new Vector3(
+                    mesh.Rotation.X + (float)yOffset,
+                    mesh.Rotation.Y,
+                    mesh.Rotation.Z
+                );
+
+                mouseLastX = currentX;
+                mouseLastY = currentY;
+                
+                return;
+            }
+            else if (Mouse.LeftButton == MouseButtonState.Released)
+            {
+                mouseLastX = double.NaN;
+                mouseLastY = double.NaN;
+                
+                return;
+            }
+            */
+
+            if (Keyboard.IsKeyDown(Key.NumPad2))
+            {
+                float offset = 0.03f;
+
+                mesh.Rotation = new Vector3(
+                    mesh.Rotation.X + offset,
+                    mesh.Rotation.Y,
+                    mesh.Rotation.Z
+                );
+            }
+            else if (Keyboard.IsKeyDown(Key.NumPad8))
+            {
+                float offset = -0.03f;
+
+                mesh.Rotation = new Vector3(
+                    mesh.Rotation.X + offset,
+                    mesh.Rotation.Y,
+                    mesh.Rotation.Z
+                );
+            }
+
+            if (Keyboard.IsKeyDown(Key.NumPad4))
+            {
+                float offset = 0.03f;
+
+                mesh.Rotation = new Vector3(
+                    mesh.Rotation.X,
+                    mesh.Rotation.Y + offset,
+                    mesh.Rotation.Z
+                );
+            }
+            else if (Keyboard.IsKeyDown(Key.NumPad6))
+            {
+                float offset = -0.03f;
+
+                mesh.Rotation = new Vector3(
+                    mesh.Rotation.X,
+                    mesh.Rotation.Y + offset,
+                    mesh.Rotation.Z
+                );
+            }
+
+            if (Keyboard.IsKeyDown(Key.Add))
+            {
+                float offset = -0.03f;
+
+                mera.Position = new Vector3(
+                    mera.Position.X,
+                    mera.Position.Y,
+                    mera.Position.Z + offset
+                );
+            }
+            else if (Keyboard.IsKeyDown(Key.Subtract))
+            {
+                float offset = 0.03f;
+
+                mera.Position = new Vector3(
+                    mera.Position.X,
+                    mera.Position.Y,
+                    mera.Position.Z + offset
+                );
+            }
+        }
+
         // Rendering loop handler
         void CompositionTarget_Rendering(object sender, object e)
         {
@@ -82,7 +273,18 @@ namespace SoftEngine
 
             // rotating slightly the cube during each frame rendered
             // add 0.01f to X if You want more robust
-            mesh.Rotation = new Vector3(mesh.Rotation.X + 0.01f, mesh.Rotation.Y + 0.01f, mesh.Rotation.Z);
+            mesh.Rotation = new Vector3(mesh.Rotation.X, mesh.Rotation.Y, mesh.Rotation.Z);
+            // change rotation here
+
+            // change camera position here
+            // mera.Position = ;
+            mera.Position = new Vector3(
+                mera.Position.X,
+                mera.Position.Y,
+                mera.Position.Z);
+            
+            MoveCameraXY();
+            MoveCameraRotate();
 
             // Doing the various matrix operations
             device.Render(mera, mesh);
@@ -98,7 +300,6 @@ namespace SoftEngine
                 fpsTextLabel.Content = currentFps.ToString();
                 fpsUpdateLabelWatcher.Restart();
             }
-
         }
 
         public MainWindow()

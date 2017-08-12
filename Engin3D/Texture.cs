@@ -8,7 +8,7 @@ using System.Windows.Media.Imaging;
 
 public class Texture
 {
-    private byte[] internalBuffer;
+    private byte[] internalBuffer = null;
     private int width;
     private int height;
 
@@ -24,6 +24,8 @@ public class Texture
     {
         BitmapImage bitmap = new BitmapImage(new Uri(filename, UriKind.Absolute));
         WriteableBitmap writeableBitmap = new WriteableBitmap(bitmap);
+        internalBuffer = new byte[4 * width * height];
+
         Marshal.Copy(writeableBitmap.BackBuffer, internalBuffer, 0, 4 * width * height);
     }
 
@@ -47,5 +49,10 @@ public class Texture
         byte a = internalBuffer[pos + 3];
 
         return new Color4(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+    }
+
+    public bool IsSetTexture
+    {
+        get { return internalBuffer != null; }
     }
 }
