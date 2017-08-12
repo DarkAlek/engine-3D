@@ -461,5 +461,25 @@ namespace SoftEngine
             // facets
             // vertices
         }
+
+        private void meshMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            GlobalSettings.currentMode = GlobalSettings.viewMode.meshMode;
+        }
+
+        private void randomFacesMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            GlobalSettings.currentMode = GlobalSettings.viewMode.randomFacesMode;
+        }
+
+        private void phongMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            GlobalSettings.currentMode = GlobalSettings.viewMode.phongMode;
+        }
+
+        private void textureMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            GlobalSettings.currentMode = GlobalSettings.viewMode.textureMode;
+        }
     }
 }
