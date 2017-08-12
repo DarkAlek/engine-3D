@@ -29,6 +29,7 @@ namespace SoftEngine
         Camera mera = new Camera();
         Stopwatch fpsWatcher = new Stopwatch();
         Stopwatch fpsUpdateLabelWatcher = new Stopwatch();
+        PhongWindow phongWindowSettings = null;
 
         double mouseLastX = double.NaN;
         double mouseLastY = double.NaN;
@@ -464,21 +465,57 @@ namespace SoftEngine
 
         private void meshMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            meshMenuItem.IsChecked = true;
+            phongMenuItem.IsChecked = false;
+            randomFacesMenuItem.IsChecked = false;
+            textureMenuItem.IsChecked = false;
+            if (phongWindowSettings != null)
+                phongWindowSettings.Close();
+            phongWindowSettings = null;
+
             GlobalSettings.currentMode = GlobalSettings.viewMode.meshMode;
         }
 
         private void randomFacesMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            randomFacesMenuItem.IsChecked = true;
+            phongMenuItem.IsChecked = false;
+            meshMenuItem.IsChecked = false;
+            textureMenuItem.IsChecked = false;
+            if (phongWindowSettings != null)
+                phongWindowSettings.Close();
+            phongWindowSettings = null;
+
             GlobalSettings.currentMode = GlobalSettings.viewMode.randomFacesMode;
         }
 
         private void phongMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            phongMenuItem.IsChecked = true;
+            meshMenuItem.IsChecked = false;
+            randomFacesMenuItem.IsChecked = false;
+            textureMenuItem.IsChecked = false;
+
+            if (phongWindowSettings != null)
+                phongWindowSettings.Close();
+
+            phongWindowSettings = new PhongWindow();
+            phongWindowSettings.Show();
+
             GlobalSettings.currentMode = GlobalSettings.viewMode.phongMode;
+            
         }
 
         private void textureMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            textureMenuItem.IsChecked = true;
+            phongMenuItem.IsChecked = false;
+            randomFacesMenuItem.IsChecked = false;
+            meshMenuItem.IsChecked = false;
+            if (phongWindowSettings != null)
+                phongWindowSettings.Close();
+            phongWindowSettings = null;
+
             GlobalSettings.currentMode = GlobalSettings.viewMode.textureMode;
         }
     }

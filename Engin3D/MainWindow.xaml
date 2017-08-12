@@ -25,7 +25,7 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="View">
-                <MenuItem x:Name="meshMenuItem" Header="Mesh" IsCheckable="True" Click="meshMenuItem_Click" />
+                <MenuItem x:Name="meshMenuItem" Header="Mesh" IsChecked="True" IsCheckable="True" Click="meshMenuItem_Click" />
                 <MenuItem x:Name="randomFacesMenuItem" Header="Random-color faces" IsCheckable="True" Click="randomFacesMenuItem_Click" />
                 <MenuItem x:Name="phongMenuItem" Header="Phong model" IsCheckable="True" Click="phongMenuItem_Click" />
                 <MenuItem x:Name="textureMenuItem" Header="Texture" IsCheckable="True" Click="textureMenuItem_Click" />

@@ -69,6 +69,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Face.cs" />
+    <Compile Include="GlobalSettings.cs" />
+    <Compile Include="PhongWindow.xaml.cs">
+      <DependentUpon>PhongWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ScanLineData.cs" />
     <Compile Include="Texture.cs" />
     <Page Include="MainWindow.xaml">
@@ -85,6 +89,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="PhongWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mesh.cs" />

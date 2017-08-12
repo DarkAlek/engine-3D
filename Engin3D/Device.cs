@@ -16,7 +16,7 @@ namespace SoftEngine
         private WriteableBitmap bmp;
         private readonly int renderWidth;
         private readonly int renderHeight;
-        Vector3 lightPos = new Vector3(0, 1, 1);
+        Vector3 lightPos = GlobalSettings.lightPos;
 
         public Device(WriteableBitmap bmp)
         {
@@ -137,25 +137,32 @@ namespace SoftEngine
                 */
 
                 // TEST DRIVEN
+                // TODO
+                // set color in Vector3 using color from method
+                if (GlobalSettings.currentMode == GlobalSettings.viewMode.phongMode)
+                {
+                    var L = GlobalSettings.lightPos;          // can be set as (R, G, B)
+                    var n = pNormal;
+                    var R = new Vector3(0.5f, 0.3f, 0.4f);    // TODO: leave on last 
+                    var A = GlobalSettings.ambientColor;      // can be set as (R, G, B)
+                    var D = GlobalSettings.diffuseColor;      // can be set as (R, G, B)
+                    var S = GlobalSettings.specularColor;     // can be set as (R, G, B)
+                    var p = GlobalSettings.specularPower;     // can be set as Int
+                    Vector3 specularMax = Vector3.Max(new Vector3(0, 0, 0), R * L);
+                    Vector3 specularPowered = specularMax;
 
-                var L = lightPos;
-                var n = pNormal;
-                var R = new Vector3(0.5f, 0.3f, 0.4f); // TODO reflection
-                var A = new Vector3(0.1f, 0.3f, 0.1f);
-                var D = new Vector3(0.3f, 0.8f, 0.6f);
-                var S = new Vector3(0.7f, 0.3f, 0.2f);
-                var p = 1;
-                Vector3 specularMax = Vector3.Max(new Vector3(0, 0, 0), R * L);
-                Vector3 specularPowered = specularMax;
+                    for (int i = 1; i < p; ++i)
+                        specularPowered *= specularMax;
 
-                for (int i = 1; i < p; ++i)
-                    specularPowered *= specularMax;
-
-                Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
-                Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
-                DrawPoint(new Vector3(x, data.currentY, z), colorDraw);
-
-                // END OF
+                    Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+                    Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
+                    DrawPoint(new Vector3(x, data.currentY, z), colorDraw);
+                    // END OF
+                }
+                else
+                {
+                    DrawPoint(new Vector3(x, data.currentY, z), color);
+                }
             }
         }
 
@@ -378,7 +385,7 @@ namespace SoftEngine
                     Vector3 cameraPos = camera.Position - mesh.Vertices[face.A].WorldCoordinates;
                     float angle = Angle(normalR, cameraPos);
 
-                    if (angle > 90)
+                    if (angle < 0)
                         continue;
                     // END 
 
@@ -390,14 +397,53 @@ namespace SoftEngine
                     var pixelB = Project(vertexB, transformMatrix, worldMatrix);
                     var pixelC = Project(vertexC, transformMatrix, worldMatrix);
 
-                    var colorR = 0.25f + (faceIndex % mesh.Faces.Length) * 0.75f / mesh.Faces.Length;
-                    var colorG = 0.25f + (faceIndex % mesh.Faces.Length) * 0.75f / mesh.Faces.Length;
-                    var colorB = 0.25f + (faceIndex % mesh.Faces.Length) * 0.75f / mesh.Faces.Length;
-
                     // change color here
-                    DrawTriangle(pixelA, pixelB, pixelC, new Color4(0.0f, 0.0f, 1.0f, 1));
+
+                    if (GlobalSettings.currentMode == GlobalSettings.viewMode.meshMode)
+                    {
+                        DrawLine(pixelA, pixelB);
+                        DrawLine(pixelB, pixelC);
+                        DrawLine(pixelC, pixelA);
+                    }
+                    else if (GlobalSettings.currentMode == GlobalSettings.viewMode.randomFacesMode)
+                    {
+                        var colorR = 0.25f + (faceIndex % mesh.Faces.Length) * 0.75f / mesh.Faces.Length;
+                        var colorG = 0.15f + (faceIndex % mesh.Faces.Length) * 0.85f / mesh.Faces.Length;
+                        var colorB = 0.45f + (faceIndex % mesh.Faces.Length) * 0.55f / mesh.Faces.Length;
+
+                        DrawTriangle(pixelA, pixelB, pixelC, new Color4(colorR, colorG, colorB, 1));
+                    }
+                    else
+                    {
+                        DrawTriangle(pixelA, pixelB, pixelC, new Color4(0.0f, 0.0f, 1.0f, 1));
+                    }
+
                     faceIndex++;
                 }
+            }
+        }
+
+        public void DrawLine(Vertex point0, Vertex point1)
+        {
+            int x0 = (int)point0.Coordinates.X;
+            int y0 = (int)point0.Coordinates.Y;
+            int x1 = (int)point1.Coordinates.X;
+            int y1 = (int)point1.Coordinates.Y;
+
+            var dx = Math.Abs(x1 - x0);
+            var dy = Math.Abs(y1 - y0);
+            var sx = (x0 < x1) ? 1 : -1;
+            var sy = (y0 < y1) ? 1 : -1;
+            var err = dx - dy;
+
+            while (true)
+            {
+                DrawPoint(new Vector3(x0, y0, point0.Coordinates.Z), new Color4(0.0f, 0.0f, 1.0f, 1));
+
+                if ((x0 == x1) && (y0 == y1)) break;
+                var e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
             }
         }
     }
