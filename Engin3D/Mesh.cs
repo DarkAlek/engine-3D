@@ -1,7 +1,7 @@
 ﻿// Mesh.cs
 using SharpDX;
 
-namespace SoftEngine
+namespace Engin3D
 {
     public class Mesh
     {
@@ -10,18 +10,12 @@ namespace SoftEngine
         public Face[] Faces { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Rotation { get; set; }
-        public Texture Texture { get; set; }
 
         public Mesh(string name, int verticesCount, int facesCount)
         {
             Vertices = new Vertex[verticesCount];
             Faces = new Face[facesCount];
             Name = name;
-        }
-
-        public void LoadTexture(string filename, int width, int height)
-        {
-            Texture = new Texture(filename, width, height);
         }
     }
 

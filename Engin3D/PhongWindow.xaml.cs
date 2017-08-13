@@ -13,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace SoftEngine
+namespace Engin3D
 {
     /// <summary>
     /// Interaction logic for PhongWindow.xaml

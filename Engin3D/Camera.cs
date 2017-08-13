@@ -1,7 +1,6 @@
-﻿// Camera.cs & Mesh.cs
-using SharpDX;
+﻿using SharpDX;
 
-namespace SoftEngine
+namespace Engin3D
 {
     public class Camera
     {

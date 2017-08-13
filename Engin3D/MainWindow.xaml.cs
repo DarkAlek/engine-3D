@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
-namespace SoftEngine
+namespace Engin3D
 {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
@@ -36,39 +36,11 @@ namespace SoftEngine
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            // Choose the back buffer resolution here
             WriteableBitmap bmp = BitmapFactory.New(600, 480);
 
             device = new Device(bmp);
             device.cameraWorld = mera;
-
-            // Our Image XAML control
             frontBuffer.Source = bmp;
-
-            /*
-            mesh.Vertices[0] = new Vertex(-1, 1, 1);
-            mesh.Vertices[1] = new Vertex(1, 1, 1);
-            mesh.Vertices[2] = new Vector3(-1, -1, 1);
-            mesh.Vertices[3] = new Vector3(1, -1, 1);
-            mesh.Vertices[4] = new Vector3(-1, 1, -1);
-            mesh.Vertices[5] = new Vector3(1, 1, -1);
-            mesh.Vertices[6] = new Vector3(1, -1, -1);
-            mesh.Vertices[7] = new Vector3(-1, -1, -1);
-
-            mesh.Faces[0] = new Face { A = 0, B = 1, C = 2 };
-            mesh.Faces[1] = new Face { A = 1, B = 2, C = 3 };
-            mesh.Faces[2] = new Face { A = 1, B = 3, C = 6 };
-            mesh.Faces[3] = new Face { A = 1, B = 5, C = 6 };
-            mesh.Faces[4] = new Face { A = 0, B = 1, C = 4 };
-            mesh.Faces[5] = new Face { A = 1, B = 4, C = 5 };
-
-            mesh.Faces[6] = new Face { A = 2, B = 3, C = 7 };
-            mesh.Faces[7] = new Face { A = 3, B = 6, C = 7 };
-            mesh.Faces[8] = new Face { A = 0, B = 2, C = 7 };
-            mesh.Faces[9] = new Face { A = 0, B = 4, C = 7 };
-            mesh.Faces[10] = new Face { A = 4, B = 5, C = 6 };
-            mesh.Faces[11] = new Face { A = 4, B = 6, C = 7 };
-            */
 
             MouseWheel += MainWindow_MouseWheel;            
 
@@ -78,13 +50,11 @@ namespace SoftEngine
             fpsWatcher.Start();
             fpsUpdateLabelWatcher.Start();
 
-            // Registering to the XAML rendering loop
             CompositionTarget.Rendering += CompositionTarget_Rendering;
         }
 
         private void FrontBuffer_MouseMove(object sender, MouseEventArgs e)
         {
-            // ADD THIS TO RENDER METHOD
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 mouseLastX = e.GetPosition(frontBuffer).X;
@@ -158,52 +128,6 @@ namespace SoftEngine
 
         private void MoveCameraRotate()
         {
-            //var currentX = Mouse.GetPosition(frontBuffer).X;
-            //var currentY = Mouse.GetPosition(frontBuffer).Y;
-            /*
-            if (Mouse.LeftButton == MouseButtonState.Pressed)
-            {
-                if (double.IsNaN(mouseLastX))
-                {
-                    mouseLastX = currentX;
-                    mouseLastY = currentY;
-
-                    return;
-                }
-                
-                double xOffset = currentX - mouseLastX;
-                double yOffset = currentY - mouseLastY;
-
-                if (xOffset > 0)
-                    xOffset = 0.03f;
-                else if (xOffset <= 0)
-                    xOffset = -0.03f;
-
-                if (yOffset > 0)
-                    yOffset = 0.03f;
-                else if (yOffset <= 0)
-                    yOffset = -0.03f;
-
-                mesh.Rotation = new Vector3(
-                    mesh.Rotation.X + (float)yOffset,
-                    mesh.Rotation.Y,
-                    mesh.Rotation.Z
-                );
-
-                mouseLastX = currentX;
-                mouseLastY = currentY;
-                
-                return;
-            }
-            else if (Mouse.LeftButton == MouseButtonState.Released)
-            {
-                mouseLastX = double.NaN;
-                mouseLastY = double.NaN;
-                
-                return;
-            }
-            */
-
             if (Keyboard.IsKeyDown(Key.NumPad2))
             {
                 float offset = 0.03f;
@@ -268,18 +192,12 @@ namespace SoftEngine
             }
         }
 
-        // Rendering loop handler
         void CompositionTarget_Rendering(object sender, object e)
         {
             device.Clear(0, 0, 0, 255);
 
-            // rotating slightly the cube during each frame rendered
-            // add 0.01f to X if You want more robust
             mesh.Rotation = new Vector3(mesh.Rotation.X, mesh.Rotation.Y, mesh.Rotation.Z);
-            // change rotation here
 
-            // change camera position here
-            // mera.Position = ;
             mera.Position = new Vector3(
                 mera.Position.X,
                 mera.Position.Y,
@@ -288,9 +206,7 @@ namespace SoftEngine
             MoveCameraXY();
             MoveCameraRotate();
 
-            // Doing the various matrix operations
             device.Render(mera, mesh);
-            // Flushing the back buffer into the front buffer
             device.Present();
 
             long timeElapsed = fpsWatcher.ElapsedMilliseconds;
@@ -374,20 +290,11 @@ namespace SoftEngine
                         var x = (float)vertices[actualVertice, 0];
                         var y = (float)vertices[actualVertice, 1];
                         var z = (float)vertices[actualVertice, 2];
-                        // Loading the vertex normal exported by Blender
-
-                        // TODO
-                        // normal preparing
-                        // how to?
                         
                         var nx = (float)0;
                         var ny = (float)0;
                         var nz = (float)0;
                         
-                        // TODO
-                        // should be divided by max abs value?
-                        // 
-                        // notice there is minus
                         mesh.Vertices[actualVertice] = new Vertex
                         {
                             Coordinates = new Vector3(x, y, z),
@@ -423,7 +330,6 @@ namespace SoftEngine
                     }
                 }
 
-                // here set normal vector for every facet
                 for (int i = 0; i < mesh.Faces.Length; ++i)
                 {
                     Face face = mesh.Faces[i];
@@ -441,7 +347,6 @@ namespace SoftEngine
                     mesh.Faces[i].Normal = new Vector3(nx, ny, nz);
                 }
 
-                // here set normal for every vertex
                 for (int i = 0; i < mesh.Faces.Length; ++i)
                 {
                     Face face = mesh.Faces[i];
@@ -458,10 +363,6 @@ namespace SoftEngine
                     mesh.Vertices[face.C].Normal.Normalize();
                 }
             }
-
-            // i have:
-            // facets
-            // vertices
         }
 
         private void meshMenuItem_Click(object sender, RoutedEventArgs e)
