@@ -101,7 +101,7 @@ namespace SoftEngine
             return min + (max - min) * Clamp(gradient);
         }
 
-        void ProcessScanLine(ScanLineData data, Vertex va, Vertex vb, Vertex vc, Vertex vd, Color4 color, int offsetTextureX = 0, int offsetTextureY = 0)
+        void ProcessScanLine(ScanLineData data, Vertex va, Vertex vb, Vertex vc, Vertex vd, Color4 color)
         {
             Vector3 pa = va.Coordinates;
             Vector3 pb = vb.Coordinates;
@@ -129,7 +129,14 @@ namespace SoftEngine
             // TEST DRIVEN
             var sNormal = Interpolate(va.Normal, vb.Normal, gradient1);
             var eNormal = Interpolate(vc.Normal, vd.Normal, gradient2);
+            // END OF
 
+            // TEST DRIVEN FOR TEXTURE 
+            // Interpolating texture coordinates on Y
+            var su = Interpolate(data.ua, data.ub, gradient1);
+            var eu = Interpolate(data.uc, data.ud, gradient2);
+            var sv = Interpolate(data.va, data.vb, gradient1);
+            var ev = Interpolate(data.vc, data.vd, gradient2);
             // END OF
 
             // drawing a line from left (sx) to right (ex) 
@@ -173,8 +180,11 @@ namespace SoftEngine
                 {
                     float leftX = Math.Min(pa.X, pb.X);
 
-                    var textureX = (int)((x - leftX + offsetTextureX) % (int)currentTexture.Width);
-                    var textureY = (int)((data.currentY - pa.Y + offsetTextureY) % (int)currentTexture.Height);
+                    var u = Interpolate(su, eu, gradient);
+                    var v = Interpolate(sv, ev, gradient);
+
+                    int textureX = Math.Abs((int)(u * currentTexture.PixelWidth) % currentTexture.PixelWidth);
+                    int textureY = Math.Abs((int)(v * currentTexture.PixelHeight) % currentTexture.PixelHeight);
 
                     var colorBuffer = currentTexture.GetPixel(textureX, textureY);
 
@@ -241,7 +251,8 @@ namespace SoftEngine
             {
                 Coordinates = new Vector3(x, y, point2d.Z),
                 Normal = normal3dWorld,
-                WorldCoordinates = point3dWorld
+                WorldCoordinates = point3dWorld,
+                TextureCoordinates = new Vector2(vertex.Coordinates.X, vertex.Coordinates.Y)
             };
         }
 
@@ -266,7 +277,7 @@ namespace SoftEngine
             bmp.Unlock();
         }
 
-        public void DrawTriangle(Vertex v1, Vertex v2, Vertex v3, Color4 color, int offsetTextureX = 0, int offsetTextureY = 0)
+        public void DrawTriangle(Vertex v1, Vertex v2, Vertex v3, Color4 color)
         {
             // Sorting the points in order to always have this order on screen p1, p2 & p3
             // with p1 always up (thus having the Y the lowest possible to be near the top screen)
@@ -343,7 +354,18 @@ namespace SoftEngine
                         data.ndotlb = nl3;
                         data.ndotlc = nl1;
                         data.ndotld = nl2;
-                        ProcessScanLine(data, v1, v3, v1, v2, color, offsetTextureX, offsetTextureY);
+
+                        data.ua = v1.TextureCoordinates.X;
+                        data.ub = v3.TextureCoordinates.X;
+                        data.uc = v1.TextureCoordinates.X;
+                        data.ud = v2.TextureCoordinates.X;
+
+                        data.va = v1.TextureCoordinates.Y;
+                        data.vb = v3.TextureCoordinates.Y;
+                        data.vc = v1.TextureCoordinates.Y;
+                        data.vd = v2.TextureCoordinates.Y;
+
+                        ProcessScanLine(data, v1, v3, v1, v2, color);
                     }
                     else
                     {
@@ -351,7 +373,18 @@ namespace SoftEngine
                         data.ndotlb = nl3;
                         data.ndotlc = nl2;
                         data.ndotld = nl3;
-                        ProcessScanLine(data, v1, v3, v2, v3, color, offsetTextureX, offsetTextureY);
+
+                        data.ua = v1.TextureCoordinates.X;
+                        data.ub = v3.TextureCoordinates.X;
+                        data.uc = v2.TextureCoordinates.X;
+                        data.ud = v3.TextureCoordinates.X;
+
+                        data.va = v1.TextureCoordinates.Y;
+                        data.vb = v3.TextureCoordinates.Y;
+                        data.vc = v2.TextureCoordinates.Y;
+                        data.vd = v3.TextureCoordinates.Y;
+
+                        ProcessScanLine(data, v1, v3, v2, v3, color);
                     }
                 }
             }
@@ -378,7 +411,18 @@ namespace SoftEngine
                         data.ndotlb = nl2;
                         data.ndotlc = nl1;
                         data.ndotld = nl3;
-                        ProcessScanLine(data, v1, v2, v1, v3, color, offsetTextureX, offsetTextureY);
+
+                        data.ua = v1.TextureCoordinates.X;
+                        data.ub = v2.TextureCoordinates.X;
+                        data.uc = v1.TextureCoordinates.X;
+                        data.ud = v3.TextureCoordinates.X;
+
+                        data.va = v1.TextureCoordinates.Y;
+                        data.vb = v2.TextureCoordinates.Y;
+                        data.vc = v1.TextureCoordinates.Y;
+                        data.vd = v3.TextureCoordinates.Y;
+
+                        ProcessScanLine(data, v1, v2, v1, v3, color);
                     }
                     else
                     {
@@ -386,7 +430,18 @@ namespace SoftEngine
                         data.ndotlb = nl3;
                         data.ndotlc = nl1;
                         data.ndotld = nl3;
-                        ProcessScanLine(data, v2, v3, v1, v3, color, offsetTextureX, offsetTextureY);
+
+                        data.ua = v2.Coordinates.X;
+                        data.ub = v3.Coordinates.X;
+                        data.uc = v1.Coordinates.X;
+                        data.ud = v3.Coordinates.X;
+
+                        data.va = v2.Coordinates.Y;
+                        data.vb = v3.Coordinates.Y;
+                        data.vc = v1.Coordinates.Y;
+                        data.vd = v3.Coordinates.Y;
+
+                        ProcessScanLine(data, v2, v3, v1, v3, color);
                     }
                 }
             }
@@ -461,7 +516,7 @@ namespace SoftEngine
                         var offsetX = (faceIndex * 45 % (renderWidth - 100));
                         var offsetY = (faceIndex * 55 % (renderHeight - 100));
 
-                        DrawTriangle(pixelA, pixelB, pixelC, new Color4(), offsetX, offsetY);
+                        DrawTriangle(pixelA, pixelB, pixelC, new Color4());
                     }
                     else
                     {
