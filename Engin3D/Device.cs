@@ -18,6 +18,8 @@ namespace SoftEngine
         private readonly int renderHeight;
         Vector3 lightPos = GlobalSettings.lightPos;
         public Camera cameraWorld;
+        private WriteableBitmap currentTexture;
+        private byte[] currentTextureBuffer;
 
         public Device(WriteableBitmap bmp)
         {
@@ -29,6 +31,13 @@ namespace SoftEngine
             // on screen (width*height) * 4 (R,G,B & Alpha values). 
             backBuffer = new byte[bmp.PixelWidth * bmp.PixelHeight * 4];
             depthBuffer = new float[bmp.PixelWidth * bmp.PixelHeight];
+
+            // load texture into bitmap
+            BitmapImage texture = new BitmapImage(new Uri("H:/MiNI/Vsem/GK I - 3D/Engin3D/Engin3D/res/texture3.jpg", UriKind.Absolute));
+            currentTexture = new WriteableBitmap(texture);
+            var stride = currentTexture.PixelWidth * ((currentTexture.Format.BitsPerPixel + 7) / 8);
+            currentTextureBuffer = new byte[currentTexture.PixelHeight * stride];
+            currentTexture.CopyPixels(currentTextureBuffer, stride, 0);
         }
 
         // This method is called to clear the back buffer with a specific color
@@ -92,7 +101,7 @@ namespace SoftEngine
             return min + (max - min) * Clamp(gradient);
         }
 
-        void ProcessScanLine(ScanLineData data, Vertex va, Vertex vb, Vertex vc, Vertex vd, Color4 color)
+        void ProcessScanLine(ScanLineData data, Vertex va, Vertex vb, Vertex vc, Vertex vd, Color4 color, int offsetTextureX = 0, int offsetTextureY = 0)
         {
             Vector3 pa = va.Coordinates;
             Vector3 pb = vb.Coordinates;
@@ -160,6 +169,39 @@ namespace SoftEngine
                     DrawPoint(new Vector3(x, data.currentY, z), colorDraw);
                     // END OF
                 }
+                else if (GlobalSettings.currentMode == GlobalSettings.viewMode.textureMode)
+                {
+                    float leftX = Math.Min(pa.X, pb.X);
+
+                    var textureX = (int)((x - leftX + offsetTextureX) % (int)currentTexture.Width);
+                    var textureY = (int)((data.currentY - pa.Y + offsetTextureY) % (int)currentTexture.Height);
+
+                    var colorBuffer = currentTexture.GetPixel(textureX, textureY);
+
+                    /*
+                    byte b = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX];
+                    byte g = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX + 1];
+                    byte r = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX + 2];
+                    */
+
+                    //Color4 colorFromTexture = new Color4(colorBuffer.R/255.0f, colorBuffer.G/255.0f, colorBuffer.B/255.0f, 1.0f);
+                    var L = GlobalSettings.lightPos;          // can be set as (X, Y, Z)
+                    var n = pNormal;
+                    var R = 2 * n * Vector3.Dot(n, L) - L;   // TODO: leave on last 
+                    var A = new Vector3(colorBuffer.R / 255.0f, colorBuffer.G / 255.0f, colorBuffer.B / 255.0f);      // can be set as (R, G, B)
+                    var D = GlobalSettings.diffuseColor;      // can be set as (R, G, B)
+                    var S = GlobalSettings.specularColor;     // can be set as (R, G, B)
+                    var p = GlobalSettings.specularPower;     // can be set as Int
+                    Vector3 specularMax = Vector3.Max(new Vector3(0, 0, 0), R * L);
+                    Vector3 specularPowered = specularMax;
+
+                    for (int i = 1; i < p; ++i)
+                        specularPowered *= specularMax;
+
+                    Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+                    Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
+                    DrawPoint(new Vector3(x, data.currentY, z), colorDraw);
+                }
                 else
                 {
                     DrawPoint(new Vector3(x, data.currentY, z), color);
@@ -224,7 +266,7 @@ namespace SoftEngine
             bmp.Unlock();
         }
 
-        public void DrawTriangle(Vertex v1, Vertex v2, Vertex v3, Color4 color)
+        public void DrawTriangle(Vertex v1, Vertex v2, Vertex v3, Color4 color, int offsetTextureX = 0, int offsetTextureY = 0)
         {
             // Sorting the points in order to always have this order on screen p1, p2 & p3
             // with p1 always up (thus having the Y the lowest possible to be near the top screen)
@@ -301,7 +343,7 @@ namespace SoftEngine
                         data.ndotlb = nl3;
                         data.ndotlc = nl1;
                         data.ndotld = nl2;
-                        ProcessScanLine(data, v1, v3, v1, v2, color);
+                        ProcessScanLine(data, v1, v3, v1, v2, color, offsetTextureX, offsetTextureY);
                     }
                     else
                     {
@@ -309,7 +351,7 @@ namespace SoftEngine
                         data.ndotlb = nl3;
                         data.ndotlc = nl2;
                         data.ndotld = nl3;
-                        ProcessScanLine(data, v1, v3, v2, v3, color);
+                        ProcessScanLine(data, v1, v3, v2, v3, color, offsetTextureX, offsetTextureY);
                     }
                 }
             }
@@ -336,7 +378,7 @@ namespace SoftEngine
                         data.ndotlb = nl2;
                         data.ndotlc = nl1;
                         data.ndotld = nl3;
-                        ProcessScanLine(data, v1, v2, v1, v3, color);
+                        ProcessScanLine(data, v1, v2, v1, v3, color, offsetTextureX, offsetTextureY);
                     }
                     else
                     {
@@ -344,7 +386,7 @@ namespace SoftEngine
                         data.ndotlb = nl3;
                         data.ndotlc = nl1;
                         data.ndotld = nl3;
-                        ProcessScanLine(data, v2, v3, v1, v3, color);
+                        ProcessScanLine(data, v2, v3, v1, v3, color, offsetTextureX, offsetTextureY);
                     }
                 }
             }
@@ -413,6 +455,13 @@ namespace SoftEngine
                         var colorB = 0.45f + (faceIndex % mesh.Faces.Length) * 0.55f / mesh.Faces.Length;
 
                         DrawTriangle(pixelA, pixelB, pixelC, new Color4(colorR, colorG, colorB, 1));
+                    }
+                    else if (GlobalSettings.currentMode == GlobalSettings.viewMode.textureMode)
+                    {
+                        var offsetX = (faceIndex * 45 % (renderWidth - 100));
+                        var offsetY = (faceIndex * 55 % (renderHeight - 100));
+
+                        DrawTriangle(pixelA, pixelB, pixelC, new Color4(), offsetX, offsetY);
                     }
                     else
                     {
