@@ -33,7 +33,7 @@ namespace SoftEngine
             depthBuffer = new float[bmp.PixelWidth * bmp.PixelHeight];
 
             // load texture into bitmap
-            BitmapImage texture = new BitmapImage(new Uri("H:/MiNI/Vsem/GK I - 3D/Engin3D/Engin3D/res/texture3.jpg", UriKind.Absolute));
+            BitmapImage texture = new BitmapImage(new Uri("H:/MiNI/Vsem/GK I - 3D/Engin3D/Engin3D/res/texture7.jpg", UriKind.Absolute));
             currentTexture = new WriteableBitmap(texture);
             var stride = currentTexture.PixelWidth * ((currentTexture.Format.BitsPerPixel + 7) / 8);
             currentTextureBuffer = new byte[currentTexture.PixelHeight * stride];
@@ -186,7 +186,10 @@ namespace SoftEngine
                     int textureX = Math.Abs((int)(u * currentTexture.PixelWidth) % currentTexture.PixelWidth);
                     int textureY = Math.Abs((int)(v * currentTexture.PixelHeight) % currentTexture.PixelHeight);
 
-                    var colorBuffer = currentTexture.GetPixel(textureX, textureY);
+                    //var colorBuffer = currentTexture.GetPixel(textureX, textureY);
+                    int colorB = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4];
+                    int colorG = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4 + 1];
+                    int colorR = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4 + 2];
 
                     /*
                     byte b = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX];
@@ -198,7 +201,7 @@ namespace SoftEngine
                     var L = GlobalSettings.lightPos;          // can be set as (X, Y, Z)
                     var n = pNormal;
                     var R = 2 * n * Vector3.Dot(n, L) - L;   // TODO: leave on last 
-                    var A = new Vector3(colorBuffer.R / 255.0f, colorBuffer.G / 255.0f, colorBuffer.B / 255.0f);      // can be set as (R, G, B)
+                    var A = new Vector3(colorR / 255.0f, colorR / 255.0f, colorB / 255.0f);      // can be set as (R, G, B)
                     var D = GlobalSettings.diffuseColor;      // can be set as (R, G, B)
                     var S = GlobalSettings.specularColor;     // can be set as (R, G, B)
                     var p = GlobalSettings.specularPower;     // can be set as Int
