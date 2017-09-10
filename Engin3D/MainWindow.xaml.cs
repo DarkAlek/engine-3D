@@ -44,7 +44,7 @@ namespace Engin3D
 
             MouseWheel += MainWindow_MouseWheel;            
 
-            mera.Position = new Vector3(0, 0, 10.0f);
+            mera.Position = new Vector3(0, 1.0f, 10.0f);
             mera.Target = Vector3.Zero;
 
             fpsWatcher.Start();
@@ -419,6 +419,30 @@ namespace Engin3D
             phongWindowSettings = null;
 
             GlobalSettings.currentMode = GlobalSettings.viewMode.textureMode;
+        }
+
+        private void opacityMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (opacityMenuItem.IsChecked)
+                GlobalSettings.effectModes.Add(GlobalSettings.effectMode.opacityEffect);
+            else
+                GlobalSettings.effectModes.Remove(GlobalSettings.effectMode.opacityEffect);
+        }
+
+        private void fogMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (fogMenuItem.IsChecked)
+                GlobalSettings.effectModes.Add(GlobalSettings.effectMode.fogEffect);
+            else
+                GlobalSettings.effectModes.Remove(GlobalSettings.effectMode.fogEffect);
+        }
+
+        private void backfaceMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (backfaceMenuItem.IsChecked)
+                GlobalSettings.algorithmsUsed.Add(GlobalSettings.algorithm.backfaceCulling);
+            else
+                GlobalSettings.algorithmsUsed.Remove(GlobalSettings.algorithm.backfaceCulling);
         }
     }
 }

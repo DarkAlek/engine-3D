@@ -17,7 +17,20 @@ namespace Engin3D
             textureMode,
         }
 
+        public enum effectMode
+        {
+            opacityEffect,
+            fogEffect
+        }
+
+        public enum algorithm
+        {
+            backfaceCulling
+        }
+
         public static viewMode currentMode = viewMode.meshMode;
+        public static List<effectMode> effectModes = new List<effectMode>();
+        public static List<algorithm> algorithmsUsed = new List<algorithm>() { algorithm.backfaceCulling };
 
         public static Vector3 lightPos = new Vector3(0, 1, 1);
         public static Vector3 ambientColor = new Vector3(0, 0.196f, 0);

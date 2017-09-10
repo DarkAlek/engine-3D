@@ -58,17 +58,41 @@ namespace Engin3D
             var index = (x + y * renderWidth);
             var index4 = index * 4;
 
-            if (depthBuffer[index] < z)
+            if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.opacityEffect))
             {
-                return;
+                double alpha = .3;
+
+                if (depthBuffer[index] != float.MaxValue)
+                {
+                    backBuffer[index4] = (byte)((color.Blue * 255 * alpha) + backBuffer[index4] * alpha);
+                    backBuffer[index4 + 1] = (byte)((color.Green * 255 * alpha) + backBuffer[index4] * alpha);
+                    backBuffer[index4 + 2] = (byte)((color.Red * 255 * alpha) + backBuffer[index4] * alpha);
+                    backBuffer[index4 + 3] = (byte)((color.Alpha * 255) + backBuffer[index4] * alpha);
+                }
+                else
+                {
+                    backBuffer[index4] = (byte)((color.Blue * 255 * alpha));
+                    backBuffer[index4 + 1] = (byte)((color.Green * 255 * alpha));
+                    backBuffer[index4 + 2] = (byte)((color.Red * 255 * alpha));
+                    backBuffer[index4 + 3] = (byte)((color.Alpha * 255));
+                }
+
+                depthBuffer[index] = z;
             }
+            else
+            {
+                if (depthBuffer[index] < z)
+                {
+                    return;
+                }
 
-            depthBuffer[index] = z;
+                depthBuffer[index] = z;
 
-            backBuffer[index4] = (byte)(color.Blue * 255);
-            backBuffer[index4 + 1] = (byte)(color.Green * 255);
-            backBuffer[index4 + 2] = (byte)(color.Red * 255);
-            backBuffer[index4 + 3] = (byte)(color.Alpha * 255);
+                backBuffer[index4] = (byte)((color.Blue * 255));
+                backBuffer[index4 + 1] = (byte)((color.Green * 255));
+                backBuffer[index4 + 2] = (byte)((color.Red * 255));
+                backBuffer[index4 + 3] = (byte)((color.Alpha * 255));
+            }
         }
 
         float Clamp(float value, float min = 0, float max = 1)
@@ -133,6 +157,13 @@ namespace Engin3D
                         specularPowered *= specularMax;
 
                     Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+
+                    if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
+                    {
+                        var dist = Vector3.Distance(cameraWorld.Position, pNormal);
+                        colorOut = colorOut * (1 / dist) * 5;
+                    }
+
                     Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
                     DrawPoint(new Vector3(x, data.currentY, z), colorDraw);
                 }
@@ -150,6 +181,12 @@ namespace Engin3D
                     int colorG = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4 + 1];
                     int colorR = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4 + 2];
 
+                    GlobalSettings.lightPos = new Vector3(0, 1, 1);
+                    GlobalSettings.ambientColor = new Vector3(0, 0.196f, 0);
+                    GlobalSettings.diffuseColor = new Vector3(0, 0.274f, 0);
+                    GlobalSettings.specularColor = new Vector3(0, 0.1f, 0);
+                    GlobalSettings.specularPower = 6;
+
                     var L = GlobalSettings.lightPos;          // can be set as (X, Y, Z)
                     var n = pNormal;
                     var R = 2 * n * Vector3.Dot(n, L) - L;   // TODO: leave on last 
@@ -164,12 +201,27 @@ namespace Engin3D
                         specularPowered *= specularMax;
 
                     Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+
+                    if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
+                    {
+                        var dist = Vector3.Distance(cameraWorld.Position, pNormal);
+                        colorOut = colorOut * (1 / dist) * 5;
+                    }
+
                     Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
                     DrawPoint(new Vector3(x, data.currentY, z), colorDraw);
                 }
                 else
                 {
-                    DrawPoint(new Vector3(x, data.currentY, z), color);
+                    Vector3 colorOut = new Vector3(color.Red, color.Green, color.Blue);
+
+                    if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
+                    {
+                        var dist = Vector3.Distance(cameraWorld.Position, pNormal);
+                        colorOut = colorOut * (1 / dist) * 5;
+                    }
+
+                    DrawPoint(new Vector3(x, data.currentY, z), new Color(colorOut.X, colorOut.Y, colorOut.Z));
                 }
             }
         }
@@ -197,7 +249,7 @@ namespace Engin3D
                 Coordinates = new Vector3(x, y, point2d.Z),
                 Normal = normal3dWorld,
                 WorldCoordinates = point3dWorld,
-                TextureCoordinates = new Vector2(vertex.Coordinates.X, vertex.Coordinates.Y)
+                TextureCoordinates = new Vector2(vertex.Coordinates.X, vertex.Coordinates.Z)
             };
         }
 
@@ -410,7 +462,7 @@ namespace Engin3D
                     Vector3 cameraPos = camera.Position - mesh.Vertices[face.A].WorldCoordinates;
                     float angle = Angle(normalR, cameraPos);
 
-                    if (angle < 0)
+                    if (GlobalSettings.algorithmsUsed.Contains(GlobalSettings.algorithm.backfaceCulling) && angle < 0)
                         continue;
 
                     var vertexA = mesh.Vertices[face.A];

@@ -36,9 +36,9 @@ namespace Engin3D
             diffuseG.Text = ((int)(GlobalSettings.diffuseColor.Y * 255)).ToString();
             diffuseB.Text = ((int)(GlobalSettings.diffuseColor.Z * 255)).ToString();
 
-            specularR.Text = ((int)(GlobalSettings.diffuseColor.X * 255)).ToString();
-            specularG.Text = ((int)(GlobalSettings.diffuseColor.Y * 255)).ToString();
-            specularB.Text = ((int)(GlobalSettings.diffuseColor.Z * 255)).ToString();
+            specularR.Text = ((int)(GlobalSettings.specularColor.X * 255)).ToString();
+            specularG.Text = ((int)(GlobalSettings.specularColor.Y * 255)).ToString();
+            specularB.Text = ((int)(GlobalSettings.specularColor.Z * 255)).ToString();
 
             specularPow.Text = GlobalSettings.specularPower.ToString();
         }

@@ -7,8 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Loaded="Page_Loaded"
-    Width="710"
-    Height="480">
+    Width="1010"
+    Height="780">
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -29,6 +29,13 @@
                 <MenuItem x:Name="randomFacesMenuItem" Header="Random-color faces" IsCheckable="True" Click="randomFacesMenuItem_Click" />
                 <MenuItem x:Name="phongMenuItem" Header="Phong model" IsCheckable="True" Click="phongMenuItem_Click" />
                 <MenuItem x:Name="textureMenuItem" Header="Texture" IsCheckable="True" Click="textureMenuItem_Click" />
+            </MenuItem>
+            <MenuItem Header="Effects">
+                <MenuItem x:Name="opacityMenuItem" Header="Opacity" IsChecked="False" IsCheckable="True" Click="opacityMenuItem_Click" />
+                <MenuItem x:Name="fogMenuItem" Header="Fog" IsCheckable="True" Click="fogMenuItem_Click" />
+            </MenuItem>
+            <MenuItem Header="Algorithms">
+                <MenuItem x:Name="backfaceMenuItem" Header="Backface-culling" IsChecked="True" IsCheckable="True" Click="backfaceMenuItem_Click" />
             </MenuItem>
         </Menu>
         <Grid Background="Black" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" >
