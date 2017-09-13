@@ -33,9 +33,9 @@ namespace Engin3D
         public static List<algorithm> algorithmsUsed = new List<algorithm>() { algorithm.backfaceCulling };
 
         public static Vector3 lightPos = new Vector3(0, 1, 1);
-        public static Vector3 ambientColor = new Vector3(0, 0.196f, 0);
+        public static Vector3 ambientColor = new Vector3(0.06f, 0.196f, 0.06f);
         public static Vector3 diffuseColor = new Vector3(0, 0.274f, 0);
         public static Vector3 specularColor = new Vector3(0, 0.1f, 0);
-        public static int specularPower = 6;
+        public static int specularPower = 3;
     }
 }

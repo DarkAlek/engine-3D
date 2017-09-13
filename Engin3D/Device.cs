@@ -30,7 +30,7 @@ namespace Engin3D
             backBuffer = new byte[bmp.PixelWidth * bmp.PixelHeight * 4];
             depthBuffer = new float[bmp.PixelWidth * bmp.PixelHeight];
 
-            BitmapImage texture = new BitmapImage(new Uri("H:/MiNI/Vsem/GK I - 3D/Engin3D/Engin3D/res/texture7.jpg", UriKind.Absolute));
+            BitmapImage texture = new BitmapImage(new Uri("H:/MiNI/Vsem/GK I - 3D/Engin3D/Engin3D/res/tecza.png", UriKind.Absolute));
             currentTexture = new WriteableBitmap(texture);
             var stride = currentTexture.PixelWidth * ((currentTexture.Format.BitsPerPixel + 7) / 8);
             currentTextureBuffer = new byte[currentTexture.PixelHeight * stride];
@@ -64,17 +64,21 @@ namespace Engin3D
 
                 if (depthBuffer[index] != float.MaxValue)
                 {
-                    backBuffer[index4] = (byte)((color.Blue * 255 * alpha) + backBuffer[index4] * alpha);
-                    backBuffer[index4 + 1] = (byte)((color.Green * 255 * alpha) + backBuffer[index4] * alpha);
-                    backBuffer[index4 + 2] = (byte)((color.Red * 255 * alpha) + backBuffer[index4] * alpha);
-                    backBuffer[index4 + 3] = (byte)((color.Alpha * 255) + backBuffer[index4] * alpha);
+                    int blue = (int)((color.Blue * 255 * alpha) + backBuffer[index4]);
+                    int green = (int)((color.Green * 255 * alpha) + backBuffer[index4 + 1]);
+                    int red = (int)((color.Red * 255 * alpha) + backBuffer[index4 + 2]);
+
+                    backBuffer[index4] = blue > 255 ? (byte)255 : (byte)blue;
+                    backBuffer[index4 + 1] = blue > 255 ? (byte)255 : (byte)green;
+                    backBuffer[index4 + 2] = blue > 255 ? (byte)255 : (byte)red;
+                    backBuffer[index4 + 3] = 255;
                 }
                 else
                 {
                     backBuffer[index4] = (byte)((color.Blue * 255 * alpha));
                     backBuffer[index4 + 1] = (byte)((color.Green * 255 * alpha));
                     backBuffer[index4 + 2] = (byte)((color.Red * 255 * alpha));
-                    backBuffer[index4 + 3] = (byte)((color.Alpha * 255));
+                    backBuffer[index4 + 3] = 255;
                 }
 
                 depthBuffer[index] = z;
@@ -143,9 +147,9 @@ namespace Engin3D
 
                 if (GlobalSettings.currentMode == GlobalSettings.viewMode.phongMode)
                 {
-                    var L = GlobalSettings.lightPos;          // can be set as (X, Y, Z)
+                    var L = GlobalSettings.lightPos;
                     var n = pNormal;
-                    var R = 2 * n * Vector3.Dot(n, L) - L;   // TODO: leave on last 
+                    var R = 2 * Vector3.Dot(L, n)*n - L;
                     var A = GlobalSettings.ambientColor;      // can be set as (R, G, B)
                     var D = GlobalSettings.diffuseColor;      // can be set as (R, G, B)
                     var S = GlobalSettings.specularColor;     // can be set as (R, G, B)
@@ -153,15 +157,28 @@ namespace Engin3D
                     Vector3 specularMax = Vector3.Max(new Vector3(0, 0, 0), R * L);
                     Vector3 specularPowered = specularMax;
 
+                    /*
                     for (int i = 1; i < p; ++i)
                         specularPowered *= specularMax;
+                        */
 
-                    Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+                    float xda = Math.Max(0, Vector3.Dot(R, L));
+                    float xdb = 1;
+                    for (int i = 1; i <= p; ++i)
+                        xdb = xdb * xda;
+
+                    //Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+                    //Vector3 colorOut = A + Vector3.Dot(L, n) * D + S * specularPowered;
+                    Vector3 colorOut = A + D * Math.Max(0, Vector3.Dot(n, L)) + S * xdb;
+                    // Target => Position
 
                     if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
                     {
                         var dist = Vector3.Distance(cameraWorld.Position, pNormal);
-                        colorOut = colorOut * (1 / dist) * 5;
+                        //colorOut = colorOut * (1 / dist) * 5;
+
+                        // TEST DRIVEN
+                        colorOut = colorOut * dist / 5;
                     }
 
                     Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
@@ -171,16 +188,36 @@ namespace Engin3D
                 {
                     float leftX = Math.Min(pa.X, pb.X);
 
+                    // INTERPOLACJA JEST ZLA
+                    // I TORY SA ZLE
+                    // I POCIAG TEZ BYL ZLY
                     var u = Interpolate(su, eu, gradient);
-                    var v = Interpolate(sv, ev, gradient);
+                    var v = Interpolate(sv, sv, gradient);
 
-                    int textureX = Math.Abs((int)(u * currentTexture.PixelWidth) % currentTexture.PixelWidth);
-                    int textureY = Math.Abs((int)(v * currentTexture.PixelHeight) % currentTexture.PixelHeight);
+                    //var multiply = 1;
+                    //var u = x * z * 10/ multiply;
+                    //var v = data.currentY * z * 10 / multiply;
+
+                    if (u > 1)
+                    {
+                        u = u / 10;
+                        return;
+                    }
+
+                    if (v > 1)
+                    {
+                        v = v / 10;
+                        return;
+                    }
+
+                    int textureX = Math.Abs((int)(u * currentTexture.PixelWidth)) % currentTexture.PixelWidth;
+                    int textureY = Math.Abs((int)(v * currentTexture.PixelHeight)) % currentTexture.PixelHeight;
 
                     int colorB = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4];
                     int colorG = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4 + 1];
                     int colorR = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4 + 2];
 
+                    /*
                     GlobalSettings.lightPos = new Vector3(0, 1, 1);
                     GlobalSettings.ambientColor = new Vector3(0, 0.196f, 0);
                     GlobalSettings.diffuseColor = new Vector3(0, 0.274f, 0);
@@ -201,11 +238,16 @@ namespace Engin3D
                         specularPowered *= specularMax;
 
                     Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
+                    */
+
+                    var colorOut = new Vector3(colorR / 255.0f, colorR / 255.0f, colorB / 255.0f);
 
                     if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
                     {
                         var dist = Vector3.Distance(cameraWorld.Position, pNormal);
-                        colorOut = colorOut * (1 / dist) * 5;
+                        //colorOut = colorOut * (1 / dist) * 5;
+
+                        colorOut = colorOut * dist / 3;
                     }
 
                     Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
@@ -218,7 +260,9 @@ namespace Engin3D
                     if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
                     {
                         var dist = Vector3.Distance(cameraWorld.Position, pNormal);
-                        colorOut = colorOut * (1 / dist) * 5;
+
+                        //colorOut = colorOut * (1 / dist) * 5;
+                        colorOut = colorOut * dist / 5;
                     }
 
                     DrawPoint(new Vector3(x, data.currentY, z), new Color(colorOut.X, colorOut.Y, colorOut.Z));
