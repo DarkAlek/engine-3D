@@ -33,8 +33,8 @@ namespace Engin3D
             BitmapImage texture = new BitmapImage(new Uri("H:/MiNI/Vsem/GK I - 3D/Engin3D/Engin3D/res/tecza.png", UriKind.Absolute));
             currentTexture = new WriteableBitmap(texture);
             var stride = currentTexture.PixelWidth * ((currentTexture.Format.BitsPerPixel + 7) / 8);
-            currentTextureBuffer = new byte[currentTexture.PixelHeight * stride];
-            currentTexture.CopyPixels(currentTextureBuffer, stride, 0);
+            currentTextureBuffer = new byte[currentTexture.PixelHeight * currentTexture.BackBufferStride];
+            currentTexture.CopyPixels(currentTextureBuffer, currentTexture.BackBufferStride, 0);
         }
 
         public void Clear(byte r, byte g, byte b, byte a)
@@ -69,8 +69,8 @@ namespace Engin3D
                     int red = (int)((color.Red * 255 * alpha) + backBuffer[index4 + 2]);
 
                     backBuffer[index4] = blue > 255 ? (byte)255 : (byte)blue;
-                    backBuffer[index4 + 1] = blue > 255 ? (byte)255 : (byte)green;
-                    backBuffer[index4 + 2] = blue > 255 ? (byte)255 : (byte)red;
+                    backBuffer[index4 + 1] = green > 255 ? (byte)255 : (byte)green;
+                    backBuffer[index4 + 2] = red > 255 ? (byte)255 : (byte)red;
                     backBuffer[index4 + 3] = 255;
                 }
                 else
@@ -107,6 +107,13 @@ namespace Engin3D
         float Interpolate(float min, float max, float gradient)
         {
             return min + (max - min) * Clamp(gradient);
+        }
+
+        // TEST DRIVEN
+        float InterpolateTexture(float min, float max, Vector3 pNormal)
+        {
+            float angle = Angle(cameraWorld.Position, pNormal);
+            return (1 - angle) * min + angle * max;
         }
 
         Vector3 Interpolate(Vector3 min, Vector3 max, float gradient)
@@ -157,28 +164,17 @@ namespace Engin3D
                     Vector3 specularMax = Vector3.Max(new Vector3(0, 0, 0), R * L);
                     Vector3 specularPowered = specularMax;
 
-                    /*
-                    for (int i = 1; i < p; ++i)
-                        specularPowered *= specularMax;
-                        */
-
                     float xda = Math.Max(0, Vector3.Dot(R, L));
                     float xdb = 1;
                     for (int i = 1; i <= p; ++i)
                         xdb = xdb * xda;
 
-                    //Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
-                    //Vector3 colorOut = A + Vector3.Dot(L, n) * D + S * specularPowered;
                     Vector3 colorOut = A + D * Math.Max(0, Vector3.Dot(n, L)) + S * xdb;
-                    // Target => Position
 
                     if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
                     {
                         var dist = Vector3.Distance(cameraWorld.Position, pNormal);
-                        //colorOut = colorOut * (1 / dist) * 5;
-
-                        // TEST DRIVEN
-                        colorOut = colorOut * dist / 5;
+                        colorOut = colorOut + dist * new Vector3(.03f, .03f, .03f);
                     }
 
                     Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
@@ -186,32 +182,16 @@ namespace Engin3D
                 }
                 else if (GlobalSettings.currentMode == GlobalSettings.viewMode.textureMode)
                 {
-                    float leftX = Math.Min(pa.X, pb.X);
-
                     // INTERPOLACJA JEST ZLA
                     // I TORY SA ZLE
                     // I POCIAG TEZ BYL ZLY
                     var u = Interpolate(su, eu, gradient);
-                    var v = Interpolate(sv, sv, gradient);
+                    var v = Interpolate(sv, ev, gradient);
+                    //var u = InterpolateTexture(su, eu, pNormal);
+                    //var v = InterpolateTexture(sv, ev, pNormal);
 
-                    //var multiply = 1;
-                    //var u = x * z * 10/ multiply;
-                    //var v = data.currentY * z * 10 / multiply;
-
-                    if (u > 1)
-                    {
-                        u = u / 10;
-                        return;
-                    }
-
-                    if (v > 1)
-                    {
-                        v = v / 10;
-                        return;
-                    }
-
-                    int textureX = Math.Abs((int)(u * currentTexture.PixelWidth)) % currentTexture.PixelWidth;
-                    int textureY = Math.Abs((int)(v * currentTexture.PixelHeight)) % currentTexture.PixelHeight;
+                    int textureX = Math.Abs((int)(u * currentTexture.PixelWidth));
+                    int textureY = Math.Abs((int)(v * currentTexture.PixelHeight));
 
                     int colorB = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4];
                     int colorG = currentTextureBuffer[textureY * currentTexture.BackBufferStride + textureX * 4 + 1];
@@ -223,10 +203,11 @@ namespace Engin3D
                     GlobalSettings.diffuseColor = new Vector3(0, 0.274f, 0);
                     GlobalSettings.specularColor = new Vector3(0, 0.1f, 0);
                     GlobalSettings.specularPower = 6;
+                    */
 
-                    var L = GlobalSettings.lightPos;          // can be set as (X, Y, Z)
+                    var L = GlobalSettings.lightPos;
                     var n = pNormal;
-                    var R = 2 * n * Vector3.Dot(n, L) - L;   // TODO: leave on last 
+                    var R = 2 * Vector3.Dot(L, n) * n - L;
                     var A = new Vector3(colorR / 255.0f, colorR / 255.0f, colorB / 255.0f);      // can be set as (R, G, B)
                     var D = GlobalSettings.diffuseColor;      // can be set as (R, G, B)
                     var S = GlobalSettings.specularColor;     // can be set as (R, G, B)
@@ -234,20 +215,21 @@ namespace Engin3D
                     Vector3 specularMax = Vector3.Max(new Vector3(0, 0, 0), R * L);
                     Vector3 specularPowered = specularMax;
 
-                    for (int i = 1; i < p; ++i)
-                        specularPowered *= specularMax;
+                    float xda = Math.Max(0, Vector3.Dot(R, L));
+                    float xdb = 1;
+                    for (int i = 1; i <= p; ++i)
+                        xdb = xdb * xda;
 
-                    Vector3 colorOut = A + D * Vector3.Max(new Vector3(0, 0, 0), n * L) + S * specularPowered;
-                    */
-
-                    var colorOut = new Vector3(colorR / 255.0f, colorR / 255.0f, colorB / 255.0f);
+                    Vector3 colorOut = A + D * Math.Max(0, Vector3.Dot(n, L)) + S * xdb;
 
                     if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
                     {
                         var dist = Vector3.Distance(cameraWorld.Position, pNormal);
                         //colorOut = colorOut * (1 / dist) * 5;
 
-                        colorOut = colorOut * dist / 3;
+                        // TEST DRIVEN
+                        //colorOut = colorOut * dist / 5;
+                        colorOut = colorOut + dist * new Vector3(.03f, .03f, .03f);
                     }
 
                     Color colorDraw = new Color(colorOut.X, colorOut.Y, colorOut.Z);
@@ -260,9 +242,11 @@ namespace Engin3D
                     if (GlobalSettings.effectModes.Contains(GlobalSettings.effectMode.fogEffect))
                     {
                         var dist = Vector3.Distance(cameraWorld.Position, pNormal);
-
                         //colorOut = colorOut * (1 / dist) * 5;
-                        colorOut = colorOut * dist / 5;
+
+                        // TEST DRIVEN
+                        //colorOut = colorOut * dist / 5;
+                        colorOut = colorOut + dist * new Vector3(.03f, .03f, .03f);
                     }
 
                     DrawPoint(new Vector3(x, data.currentY, z), new Color(colorOut.X, colorOut.Y, colorOut.Z));
@@ -444,7 +428,7 @@ namespace Engin3D
                         data.ub = v2.TextureCoordinates.X;
                         data.uc = v1.TextureCoordinates.X;
                         data.ud = v3.TextureCoordinates.X;
-
+                         
                         data.va = v1.TextureCoordinates.Y;
                         data.vb = v2.TextureCoordinates.Y;
                         data.vc = v1.TextureCoordinates.Y;
@@ -458,16 +442,16 @@ namespace Engin3D
                         data.ndotlb = nl3;
                         data.ndotlc = nl1;
                         data.ndotld = nl3;
+                        // it seems to be not working like i think HERE
+                        data.ua = v2.TextureCoordinates.X;
+                        data.ub = v3.TextureCoordinates.X;
+                        data.uc = v1.TextureCoordinates.X;
+                        data.ud = v3.TextureCoordinates.X;
 
-                        data.ua = v2.Coordinates.X;
-                        data.ub = v3.Coordinates.X;
-                        data.uc = v1.Coordinates.X;
-                        data.ud = v3.Coordinates.X;
-
-                        data.va = v2.Coordinates.Y;
-                        data.vb = v3.Coordinates.Y;
-                        data.vc = v1.Coordinates.Y;
-                        data.vd = v3.Coordinates.Y;
+                        data.va = v2.TextureCoordinates.Y;
+                        data.vb = v3.TextureCoordinates.Y;
+                        data.vc = v1.TextureCoordinates.Y;
+                        data.vd = v3.TextureCoordinates.Y;
 
                         ProcessScanLine(data, v2, v3, v1, v3, color);
                     }

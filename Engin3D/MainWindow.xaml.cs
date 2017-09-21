@@ -416,7 +416,9 @@ namespace Engin3D
             meshMenuItem.IsChecked = false;
             if (phongWindowSettings != null)
                 phongWindowSettings.Close();
-            phongWindowSettings = null;
+
+            phongWindowSettings = new PhongWindow();
+            phongWindowSettings.Show();
 
             GlobalSettings.currentMode = GlobalSettings.viewMode.textureMode;
         }
