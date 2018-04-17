@@ -14,6 +14,12 @@ using System.Windows.Navigation;
 using System.Windows;
 using System.Drawing;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Xml;
+using System.Xml.Serialization;
+using System.Xml.Linq;
+using Microsoft.Win32;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -22,30 +28,56 @@ namespace Engin3D
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public partial class MainWindow
+    public partial class MainWindow : INotifyPropertyChanged
     {
         private Device device;
-        Mesh mesh = new Mesh("Cube", 8, 12);
+        ObservableCollection<Mesh> meshes = new ObservableCollection<Mesh>();
         Camera mera = new Camera();
         Stopwatch fpsWatcher = new Stopwatch();
         Stopwatch fpsUpdateLabelWatcher = new Stopwatch();
         PhongWindow phongWindowSettings = null;
+        Mesh selectedmesh;
 
-        double mouseLastX = double.NaN;
-        double mouseLastY = double.NaN;
+        public ObservableCollection<Mesh> Meshes
+        {
+            get { return meshes; }
+
+            set
+            {
+                meshes = value;
+                OnPropertyChanged("Meshes");
+            }
+        }
+
+        public Mesh SelectedMesh
+        {
+            get { return selectedmesh; }
+            set
+            {
+                selectedmesh = value;
+                OnPropertyChanged("SelectedMesh");
+            }
+        }
+
+        double mouseLastX = 0;
+        double mouseLastY = 0;
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            WriteableBitmap bmp = BitmapFactory.New(600, 480);
+            WriteableBitmap bmp = BitmapFactory.New(1000, 1000);
 
-            device = new Device(bmp);
+            device = new Device(bmp, ref frontBuffer);
             device.cameraWorld = mera;
             frontBuffer.Source = bmp;
+            frontBuffer.Stretch = Stretch.Fill;
 
-            MouseWheel += MainWindow_MouseWheel;            
+            //MouseWheel += MainWindow_MouseWheel;         
 
-            mera.Position = new Vector3(0, 1.0f, 10.0f);
+            mera.Position = new Vector3(0, 1f, 10f);
             mera.Target = Vector3.Zero;
+            //meshes.Add(new Sphere("Sphere", 1, 24, 24));
+            //meshes.Add(new Cuboid("Cuboid", 1, 1, 1));
+            //meshesList.SelectedItem = meshes[0];
 
             fpsWatcher.Start();
             fpsUpdateLabelWatcher.Start();
@@ -57,29 +89,18 @@ namespace Engin3D
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
+                double xOffset = e.GetPosition(frontBuffer).X - mouseLastX;
+                double yOffset = e.GetPosition(frontBuffer).Y - mouseLastY;
+
                 mouseLastX = e.GetPosition(frontBuffer).X;
                 mouseLastY = e.GetPosition(frontBuffer).Y;
 
-                return;
+                mera.Position = new Vector3(
+                    mera.Position.X + (float)xOffset / 100,
+                    mera.Position.Y + (float)yOffset / 100,
+                    mera.Position.Z
+                );
             }
-
-            double xOffset = e.GetPosition(frontBuffer).X - mouseLastX;
-            double yOffset = e.GetPosition(frontBuffer).Y - mouseLastY;
-
-            mouseLastX = e.GetPosition(frontBuffer).X;
-            mouseLastY = e.GetPosition(frontBuffer).Y;
-
-            mera.Position = new Vector3(
-                mera.Position.X,
-                mera.Position.Y + (float)yOffset / 1000,
-                mera.Position.Z
-            );
-
-            mesh.Rotation = new Vector3(
-                mesh.Rotation.X + (float)xOffset/1000,
-                mesh.Rotation.Y,
-                mesh.Rotation.Z
-            );
         }
 
         private void MainWindow_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -109,7 +130,6 @@ namespace Engin3D
                 mera.Target.Y - offset,
                 mera.Target.Z);
             }
-
             if (Keyboard.IsKeyDown(Key.Left))
             {
                 mera.Target = new Vector3(
@@ -125,88 +145,148 @@ namespace Engin3D
                 mera.Target.Z);
             }
         }
-
         private void MoveCameraRotate()
         {
             if (Keyboard.IsKeyDown(Key.NumPad2))
             {
-                float offset = 0.03f;
+                float offset = 0.05f;
 
-                mesh.Rotation = new Vector3(
-                    mesh.Rotation.X + offset,
-                    mesh.Rotation.Y,
-                    mesh.Rotation.Z
-                );
+                Vector3 vectorRef = new Vector3(
+                     mera.Position.X,
+                     mera.Position.Y,
+                     mera.Position.Z
+                 );
+
+                SharpDX.Matrix matrix;
+                SharpDX.Matrix.RotationX(offset, out matrix);
+
+                Vector3 newVector = Vector3.TransformCoordinate(mera.Position, matrix);
+                mera.Position = newVector;
+
+
             }
             else if (Keyboard.IsKeyDown(Key.NumPad8))
             {
-                float offset = -0.03f;
+                float offset = 0.05f;
 
-                mesh.Rotation = new Vector3(
-                    mesh.Rotation.X + offset,
-                    mesh.Rotation.Y,
-                    mesh.Rotation.Z
-                );
+                Vector3 vectorRef = new Vector3(
+                     mera.Position.X,
+                     mera.Position.Y,
+                     mera.Position.Z
+                 );
+
+                SharpDX.Matrix matrix;
+                SharpDX.Matrix.RotationX(-offset, out matrix);
+
+                Vector3 newVector = Vector3.TransformCoordinate(mera.Position, matrix);
+                mera.Position = newVector;
             }
-
-            if (Keyboard.IsKeyDown(Key.NumPad4))
+            else if (Keyboard.IsKeyDown(Key.NumPad4))
             {
-                float offset = 0.03f;
+                float offset = 0.05f;
 
-                mesh.Rotation = new Vector3(
-                    mesh.Rotation.X,
-                    mesh.Rotation.Y + offset,
-                    mesh.Rotation.Z
-                );
+                Vector3 vectorRef = new Vector3(
+                     mera.Position.X,
+                     mera.Position.Y,
+                     mera.Position.Z
+                 );
+
+                SharpDX.Matrix matrix;
+                SharpDX.Matrix.RotationY(-offset, out matrix);
+
+                Vector3 newVector = Vector3.TransformCoordinate(mera.Position, matrix);
+                mera.Position = newVector;
+
             }
             else if (Keyboard.IsKeyDown(Key.NumPad6))
             {
-                float offset = -0.03f;
+                float offset = 0.05f;
 
-                mesh.Rotation = new Vector3(
-                    mesh.Rotation.X,
-                    mesh.Rotation.Y + offset,
-                    mesh.Rotation.Z
-                );
+                Vector3 vectorRef = new Vector3(
+                     mera.Position.X,
+                     mera.Position.Y,
+                     mera.Position.Z
+                 );
+
+                SharpDX.Matrix matrix;
+                SharpDX.Matrix.RotationY(offset, out matrix);
+
+                Vector3 newVector = Vector3.TransformCoordinate(mera.Position, matrix);
+                mera.Position = newVector;
             }
 
             if (Keyboard.IsKeyDown(Key.Add))
             {
-                float offset = -0.03f;
-
                 mera.Position = new Vector3(
                     mera.Position.X,
                     mera.Position.Y,
-                    mera.Position.Z + offset
-                );
+                    mera.Position.Z) - new Vector3(0.01f * mera.Position.X,
+                                                   0.01f * mera.Position.Y,
+                                                   0.01f * mera.Position.Z);
             }
             else if (Keyboard.IsKeyDown(Key.Subtract))
             {
-                float offset = 0.03f;
-
                 mera.Position = new Vector3(
                     mera.Position.X,
                     mera.Position.Y,
-                    mera.Position.Z + offset
-                );
+                    mera.Position.Z) + new Vector3(0.01f * mera.Position.X,
+                                                   0.01f * mera.Position.Y,
+                                                   0.01f * mera.Position.Z);
             }
         }
+        private void MoveSelectedMeshRotate()
+        {
+            if (SelectedMesh != null)
+            {
+                if (Keyboard.IsKeyDown(Key.W))
+                {
+                    SelectedMesh.Rotation = new Vector3(
+                        SelectedMesh.Rotation.X + 0.02f,
+                        SelectedMesh.Rotation.Y,
+                        SelectedMesh.Rotation.Z);
+                }
+                else if (Keyboard.IsKeyDown(Key.S))
+                {
+                    SelectedMesh.Rotation = new Vector3(
+                        SelectedMesh.Rotation.X - 0.02f,
+                        SelectedMesh.Rotation.Y,
+                        SelectedMesh.Rotation.Z);
+                }
+                else if (Keyboard.IsKeyDown(Key.A))
+                {
+                    SelectedMesh.Rotation = new Vector3(
+                        SelectedMesh.Rotation.X,
+                        SelectedMesh.Rotation.Y + 0.02f,
+                        SelectedMesh.Rotation.Z);
+                }
+                if (Keyboard.IsKeyDown(Key.D))
+                {
+                    SelectedMesh.Rotation = new Vector3(
+                        SelectedMesh.Rotation.X,
+                        SelectedMesh.Rotation.Y - 0.02f,
+                        SelectedMesh.Rotation.Z);
+                }
+            }
+        }
+
 
         void CompositionTarget_Rendering(object sender, object e)
         {
             device.Clear(0, 0, 0, 255);
 
-            mesh.Rotation = new Vector3(mesh.Rotation.X, mesh.Rotation.Y, mesh.Rotation.Z);
+            //selectedmesh = meshesList.SelectedItem as Mesh;
+            //SelectedMesh.Rotation = new Vector3(SelectedMesh.Rotation.X, SelectedMesh.Rotation.Y, SelectedMesh.Rotation.Z);
 
             mera.Position = new Vector3(
                 mera.Position.X,
                 mera.Position.Y,
                 mera.Position.Z);
-            
+
             MoveCameraXY();
             MoveCameraRotate();
+            MoveSelectedMeshRotate();
 
-            device.Render(mera, mesh);
+            device.Render(mera, ref meshes);
             device.Present();
 
             long timeElapsed = fpsWatcher.ElapsedMilliseconds;
@@ -223,144 +303,130 @@ namespace Engin3D
         public MainWindow()
         {
             InitializeComponent();
+            //meshesList.ItemsSource = meshes;
+
         }
 
-        private void ImportOffFileClick(object sender, RoutedEventArgs e)
+        private void SaveFiguresToFile(object sender, RoutedEventArgs e)
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog();
-
-            dlg.DefaultExt = ".off";
-            dlg.Filter = "OFF Files (*.off)|*.off";
-
-            var result = dlg.ShowDialog();
-
-            if (!(result.HasValue && result.Value == true))
-                return;
-
-            var filename = dlg.FileName;
-
-            int dataToRead = 0;
-            int verticesCount;
-            int facetsCount;
-
-            float[,] vertices = null;
-            int[,] facets = null;
-            int actualVertice = 0;
-            int actualFacet = 0;
-
-            using (StreamReader sr = File.OpenText(filename))
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            if (saveFileDialog.ShowDialog() == true)
             {
-                string s = String.Empty;
-                while ((s = sr.ReadLine()) != null)
+                XmlWriterSettings settings = new XmlWriterSettings();
+                settings.Indent = true;
+                settings.IndentChars = ("    ");
+                using (XmlWriter writer = XmlWriter.Create(saveFileDialog.FileName, settings))
                 {
-                    // ommit comments
-                    if (s.StartsWith("#"))
-                        continue;
-
-                    if (s == "OFF")
+                    writer.WriteStartElement("Scene");
+                    // Write XML data.
+                    foreach (var figure in meshes)
                     {
-                        dataToRead = 1;
-                        continue;
-                    }
-
-                    if (dataToRead == 1)
-                    {
-                        var splitted = s.Split(' ');
-                        verticesCount = int.Parse(splitted[0]);
-                        facetsCount = int.Parse(splitted[1]);
-
-                        vertices = new float[verticesCount, 3];
-                        facets = new int[facetsCount, 3];
-
-                        // set mesh
-                        mesh = new Mesh("MeshName", verticesCount, facetsCount);
-
-                        dataToRead = 2;
-                        continue;
-                    }
-
-                    if (dataToRead == 2 && s != String.Empty)
-                    {
-                        var splitted = s.Split(' ');
-
-                        vertices[actualVertice, 0] = float.Parse(splitted[0].Replace('.', ','));  //x 
-                        vertices[actualVertice, 1] = float.Parse(splitted[1].Replace('.', ','));  //y
-                        vertices[actualVertice, 2] = float.Parse(splitted[2].Replace('.', ','));  //z
-
-                        var x = (float)vertices[actualVertice, 0];
-                        var y = (float)vertices[actualVertice, 1];
-                        var z = (float)vertices[actualVertice, 2];
-                        
-                        var nx = (float)0;
-                        var ny = (float)0;
-                        var nz = (float)0;
-                        
-                        mesh.Vertices[actualVertice] = new Vertex
+                        if (figure is Cuboid)
                         {
-                            Coordinates = new Vector3(x, y, z),
-                            Normal = new Vector3(nx, ny, nz)
-                        };
+                            writer.WriteStartElement(figure.Name);
+                            writer.WriteStartElement("Position");
+                            writer.WriteElementString("X", (figure as Cuboid).Position.X.ToString());
+                            writer.WriteElementString("Y", (figure as Cuboid).Position.Y.ToString());
+                            writer.WriteElementString("Z", (figure as Cuboid).Position.Z.ToString());
+                            writer.WriteEndElement();
+                            writer.WriteStartElement("Rotation");
+                            writer.WriteElementString("X", (figure as Cuboid).Rotation.X.ToString());
+                            writer.WriteElementString("Y", (figure as Cuboid).Rotation.Y.ToString());
+                            writer.WriteElementString("Z", (figure as Cuboid).Rotation.Z.ToString());
+                            writer.WriteEndElement();
+                            writer.WriteStartElement("Parameters");
+                            writer.WriteElementString("A", (figure as Cuboid).A.ToString());
+                            writer.WriteElementString("B", (figure as Cuboid).B.ToString());
+                            writer.WriteElementString("C", (figure as Cuboid).C.ToString());
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                        }
+                        else
+                        {
+                            writer.WriteStartElement(figure.Name);
+                            writer.WriteStartElement("Position");
+                            writer.WriteElementString("X", (figure as Sphere).Position.X.ToString());
+                            writer.WriteElementString("Y", (figure as Sphere).Position.Y.ToString());
+                            writer.WriteElementString("Z", (figure as Sphere).Position.Z.ToString());
+                            writer.WriteEndElement();
+                            writer.WriteStartElement("Rotation");
+                            writer.WriteElementString("X", (figure as Sphere).Rotation.X.ToString());
+                            writer.WriteElementString("Y", (figure as Sphere).Rotation.Y.ToString());
+                            writer.WriteElementString("Z", (figure as Sphere).Rotation.Z.ToString());
+                            writer.WriteEndElement();
+                            writer.WriteStartElement("Parameters");
+                            writer.WriteElementString("Radius", (figure as Sphere).Radius.ToString());
+                            writer.WriteElementString("SegmentsLong", (figure as Sphere).SegmentsLong.ToString());
+                            writer.WriteElementString("SegmentsLat", (figure as Sphere).SegmentsLat.ToString());
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                        }
 
-                        actualVertice++;
-                        continue;
                     }
+                    writer.WriteEndElement();
+                    writer.Flush();
+                }
+            }
+        }
 
-                    if (dataToRead == 2 && actualVertice != 0 && s == String.Empty)
+        private void LoadFiguresFromFile(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
+            {
+                meshes = new ObservableCollection<Mesh>();
+                meshesList.ItemsSource = meshes;
+                using (XmlReader reader = XmlReader.Create(openFileDialog.FileName))
+                {
+                    reader.MoveToContent();
+                    while (reader.Read())
                     {
-                        dataToRead = 3;
-                        continue;
+                        if (reader.NodeType == XmlNodeType.Element)
+                        {
+                            if (reader.Name == "Cuboid" || reader.Name == "Sphere")
+                            {
+                                XElement el = XNode.ReadFrom(reader) as XElement;
+                                if (el.Name == "Cuboid")
+                                {
+                                    float postitionX = float.Parse(el.Element("Position").Element("X").Value);
+                                    float postitionY = float.Parse(el.Element("Position").Element("Y").Value);
+                                    float postitionZ = float.Parse(el.Element("Position").Element("Z").Value);
+
+                                    float rotationX = float.Parse(el.Element("Rotation").Element("X").Value);
+                                    float rotationY = float.Parse(el.Element("Rotation").Element("Y").Value);
+                                    float rotationZ = float.Parse(el.Element("Rotation").Element("Z").Value);
+
+                                    float A = float.Parse(el.Element("Parameters").Element("A").Value);
+                                    float B = float.Parse(el.Element("Parameters").Element("B").Value);
+                                    float C = float.Parse(el.Element("Parameters").Element("C").Value);
+
+                                    Cuboid cuboid = new Cuboid("Cuboid", A, B, C);
+                                    cuboid.Position = new Vector3(postitionX, postitionY, postitionZ);
+                                    cuboid.Rotation = new Vector3(rotationX, rotationY, rotationZ);
+                                    meshes.Add(cuboid);
+                                }
+                                else
+                                {
+                                    float postitionX = float.Parse(el.Element("Position").Element("X").Value);
+                                    float postitionY = float.Parse(el.Element("Position").Element("Y").Value);
+                                    float postitionZ = float.Parse(el.Element("Position").Element("Z").Value);
+
+                                    float rotationX = float.Parse(el.Element("Rotation").Element("X").Value);
+                                    float rotationY = float.Parse(el.Element("Rotation").Element("Y").Value);
+                                    float rotationZ = float.Parse(el.Element("Rotation").Element("Z").Value);
+
+                                    float radius = float.Parse(el.Element("Parameters").Element("Radius").Value);
+                                    int segmentsLong = int.Parse(el.Element("Parameters").Element("SegmentsLong").Value);
+                                    int segmentsLat = int.Parse(el.Element("Parameters").Element("SegmentsLat").Value);
+
+                                    Sphere sphere = new Sphere("Sphere", radius, segmentsLong, segmentsLat);
+                                    sphere.Position = new Vector3(postitionX, postitionY, postitionZ);
+                                    sphere.Rotation = new Vector3(rotationX, rotationY, rotationZ);
+                                    meshes.Add(sphere);
+                                }
+                            }
+                        }
                     }
-
-                    if (dataToRead == 3 && s != String.Empty)
-                    {
-                        var splitted = s.Split(' ');
-
-                        facets[actualFacet, 0] = int.Parse(splitted[2]);  //v1
-                        facets[actualFacet, 1] = int.Parse(splitted[3]);  //v2
-                        facets[actualFacet, 2] = int.Parse(splitted[4]);  //v3
-
-                        mesh.Faces[actualFacet] = new Face {
-                            A = facets[actualFacet, 0],
-                            B = facets[actualFacet, 1],
-                            C = facets[actualFacet, 2]
-                        };
-
-                        actualFacet++;
-                        continue;
-                    }
-                }
-
-                for (int i = 0; i < mesh.Faces.Length; ++i)
-                {
-                    Face face = mesh.Faces[i];
-                    Vector3 p1 = mesh.Vertices[face.A].Coordinates;
-                    Vector3 p2 = mesh.Vertices[face.B].Coordinates;
-                    Vector3 p3 = mesh.Vertices[face.C].Coordinates;
-
-                    Vector3 u = p2 - p1;
-                    Vector3 v = p3 - p1;
-
-                    float nx = u.Y * v.Z - u.Z * v.Y;
-                    float ny = u.Z * v.X - u.X * v.Z;
-                    float nz = u.X * v.Y - u.Y * v.X;
-
-                    mesh.Faces[i].Normal = new Vector3(nx, ny, nz);
-                }
-
-                for (int i = 0; i < mesh.Faces.Length; ++i)
-                {
-                    Face face = mesh.Faces[i];
-                    mesh.Vertices[face.A].Normal += face.Normal;
-                    mesh.Vertices[face.B].Normal += face.Normal;
-                    mesh.Vertices[face.C].Normal += face.Normal;
-                }
-
-                for (int i = 0; i < mesh.Faces.Length; ++i)
-                {
-                    Face face = mesh.Faces[i];
-                    mesh.Vertices[face.A].Normal.Normalize();
-                    mesh.Vertices[face.B].Normal.Normalize();
-                    mesh.Vertices[face.C].Normal.Normalize();
                 }
             }
         }
@@ -405,7 +471,7 @@ namespace Engin3D
             phongWindowSettings.Show();
 
             GlobalSettings.currentMode = GlobalSettings.viewMode.phongMode;
-            
+
         }
 
         private void textureMenuItem_Click(object sender, RoutedEventArgs e)
@@ -445,6 +511,181 @@ namespace Engin3D
                 GlobalSettings.algorithmsUsed.Add(GlobalSettings.algorithm.backfaceCulling);
             else
                 GlobalSettings.algorithmsUsed.Remove(GlobalSettings.algorithm.backfaceCulling);
+        }
+
+        private void MenuItemDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (meshesList.SelectedIndex == -1)
+            {
+                return;
+            }
+            meshes.RemoveAt(meshesList.SelectedIndex);
+        }
+
+        private void MenuItemAddCuboid_Click(object sender, RoutedEventArgs e)
+        {
+            meshes.Add(new Cuboid("Cuboid", 1, 1, 1));
+        }
+
+        private void MenuItemAddSphere_Click(object sender, RoutedEventArgs e)
+        {
+            meshes.Add(new Sphere("Sphere", 1, 24, 16));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null)
+            {
+                handler(this, new PropertyChangedEventArgs(name));
+            }
+        }
+
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Keyboard.ClearFocus();
+        }
+    }
+
+    public class vectorContainer
+    {
+        public static Vector3 vector;
+    }
+
+    public class XFloatToStringConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            vectorContainer.vector = (Vector3)value;
+            return vectorContainer.vector.X.ToString("n4");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value as string == "") return false;
+            try
+            {
+                return new Vector3(float.Parse(value as string), vectorContainer.vector.Y, vectorContainer.vector.Z);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+    }
+
+    public class YFloatToStringConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            vectorContainer.vector = (Vector3)value;
+            return vectorContainer.vector.Y.ToString("n4");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value as string == "") return false;
+            try
+            {
+                return new Vector3(vectorContainer.vector.X, float.Parse(value as string), vectorContainer.vector.Z);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+    }
+
+    public class ZFloatToStringConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            vectorContainer.vector = (Vector3)value;
+            return vectorContainer.vector.Z.ToString("n4");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value as string == "") return false;
+            try
+            {
+                return new Vector3(vectorContainer.vector.X, vectorContainer.vector.Y, float.Parse(value as string));
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+    }
+
+    public class FloatToFloatConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            float param = System.Convert.ToSingle(value);
+            return param.ToString("n4");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value as string == "") return false;
+            try
+            {
+                return float.Parse(value as string);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+    }
+
+    public class VisibilityConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value == null) return Visibility.Hidden;
+            else return Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return true;
+        }
+    }
+
+    public class CuboidVisibilityConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value is Cuboid) return Visibility.Visible;
+            else return Visibility.Hidden;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return true;
+        }
+    }
+
+    public class SphereVisibilityConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value is Sphere) return Visibility.Visible;
+            else return Visibility.Hidden;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return true;
         }
     }
 }

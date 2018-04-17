@@ -6,6 +6,8 @@ using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Windows.Controls;
+using System.Collections.ObjectModel;
 
 namespace Engin3D
 {
@@ -16,21 +18,24 @@ namespace Engin3D
         private WriteableBitmap bmp;
         private readonly int renderWidth;
         private readonly int renderHeight;
+        private Image frontbuffer;
         Vector3 lightPos = GlobalSettings.lightPos;
         public Camera cameraWorld;
         private WriteableBitmap currentTexture;
         private byte[] currentTextureBuffer;
 
-        public Device(WriteableBitmap bmp)
+        public Device(WriteableBitmap bmp, ref Image frontbuffer)
         {
             this.bmp = bmp;
+            this.frontbuffer = frontbuffer;
             renderWidth = bmp.PixelWidth;
             renderHeight = bmp.PixelHeight;
 
             backBuffer = new byte[bmp.PixelWidth * bmp.PixelHeight * 4];
             depthBuffer = new float[bmp.PixelWidth * bmp.PixelHeight];
 
-            BitmapImage texture = new BitmapImage(new Uri("H:/MiNI/Vsem/GK I - 3D/Engin3D/Engin3D/res/tecza.png", UriKind.Absolute));
+            Uri a = new Uri("pack://application:,,,/res/texture1.png", UriKind.Absolute);
+            BitmapImage texture = new BitmapImage(a);
             currentTexture = new WriteableBitmap(texture);
             var stride = currentTexture.PixelWidth * ((currentTexture.Format.BitsPerPixel + 7) / 8);
             currentTextureBuffer = new byte[currentTexture.PixelHeight * currentTexture.BackBufferStride];
@@ -182,9 +187,6 @@ namespace Engin3D
                 }
                 else if (GlobalSettings.currentMode == GlobalSettings.viewMode.textureMode)
                 {
-                    // INTERPOLACJA JEST ZLA
-                    // I TORY SA ZLE
-                    // I POCIAG TEZ BYL ZLY
                     var u = Interpolate(su, eu, gradient);
                     var v = Interpolate(sv, ev, gradient);
                     //var u = InterpolateTexture(su, eu, pNormal);
@@ -208,7 +210,7 @@ namespace Engin3D
                     var L = GlobalSettings.lightPos;
                     var n = pNormal;
                     var R = 2 * Vector3.Dot(L, n) * n - L;
-                    var A = new Vector3(colorR / 255.0f, colorR / 255.0f, colorB / 255.0f);      // can be set as (R, G, B)
+                    var A = new Vector3(colorR / 255.0f, colorG / 255.0f, colorB / 255.0f);      // can be set as (R, G, B)
                     var D = GlobalSettings.diffuseColor;      // can be set as (R, G, B)
                     var S = GlobalSettings.specularColor;     // can be set as (R, G, B)
                     var p = GlobalSettings.specularPower;     // can be set as Int
@@ -442,7 +444,7 @@ namespace Engin3D
                         data.ndotlb = nl3;
                         data.ndotlc = nl1;
                         data.ndotld = nl3;
-                        // it seems to be not working like i think HERE
+
                         data.ua = v2.TextureCoordinates.X;
                         data.ub = v3.TextureCoordinates.X;
                         data.uc = v1.TextureCoordinates.X;
@@ -468,13 +470,12 @@ namespace Engin3D
             return cosA;
         }
 
-        public void Render(Camera camera, params Mesh[] meshes)
+        public void Render(Camera camera, ref ObservableCollection<Mesh> meshes)
         {
             var viewMatrix = Matrix.LookAtLH(camera.Position, camera.Target, Vector3.UnitY);
             var projectionMatrix = Matrix.PerspectiveFovLH(0.78f,
-                                                           (float)bmp.PixelWidth / bmp.PixelHeight,
+                                                           (float)frontbuffer.ActualWidth / (float)frontbuffer.ActualHeight,
                                                            0.01f, 1.0f);
-
             foreach (Mesh mesh in meshes)
             {
                 var worldMatrix = Matrix.RotationYawPitchRoll(mesh.Rotation.Y, mesh.Rotation.X, mesh.Rotation.Z) *

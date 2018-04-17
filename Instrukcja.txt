@@ -1,0 +1,49 @@
+Aplikacja pozwala na renderowanie 2 z 4 prymitywów (prostopadłościanu oraz sfery).
+
+Po prawej stronie interfejsu znajduje się lista, która umożliwia dodawanie oraz usuwanie figur po 
+naciśnięciu na nią prawym przyciskiem myszy. 
+Każdy z prymitywów posiada charakterystyczne dla siebie paramatry,które to można dowolnie zmieniać po
+naciśnieciu na daną figure, na liście. 
+
+Wspólne paramentry to: 
+	- pozycja,
+	- rotacja.
+	
+Parametry charakterystyczne dla prostopadłościanu:
+	- długości wszystkich boków.
+	
+Parametry charakterystyczne dla sfery:
+	- wartość promienia,
+	- ilość pionowych oraz poziomych poziomic.
+
+W aplikcji zastosowano strategie zmiany ustawień takich jak: 
+	- wyświetlanie samych meshy, 
+	- wyświetlanie wypełnionych meshy,
+	- model Phonga,
+	- teksturowanie obiektów na scenie,
+	- przezroczystość,
+	- mgła,
+	- backface-culling (ukrywanie ścian niewidocznych)
+jako parametry samej sceny i są one stosowane dla wszystkich widocznych obiektów.
+
+Po wybraniu modelu Phonga oraz teksturowania użytkownikowi wyświetla się panel zmiany parametrów dla 
+światła.
+
+W aplikcji dla użytkownika udostępniona jest pojedyncza kamera oraz pojedyncze źródło światła.
+
+Możliwy jest zapis oraz odczyt sceny, a także zachowane jest odpowiednie skalowanie figur w zależności 
+od rozmiaru okna.
+
+Kamerą można poruszać za pomocą strzałek (zmiana kąta patrzenia kamery) oraz klawiszy numerycznych (4, 8, 6, 2),
+które służą do zmiany położenia kamery, która obraca się po okręgu w płaszczyznach X oraz Y.
+
+W katalogu Engin3D\Engin3D\bin\Debug zawarty jest plik scena.xml zawierający przykładowy układ figur
+na scenie do wczytania za pomocą aplikacji File->Load. Zapisywanie aktualnej sceny obywa się podobnie 
+poprzez File->Save.
+
+Odnośnie kodu źródłowego:
+
+Figury posiadają wspólny interfejs Mesh, który to implementują.
+Klasa Device odpowiada za cały potok renderowania, w zależności od wybranych przez użytkownika opcji, a dokładniej
+metoda Render(Camera camera, ref ObservableCollection<Mesh> meshes), która to iteruje po wszystkich figurach
+na liście Meshy.

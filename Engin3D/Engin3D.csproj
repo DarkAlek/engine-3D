@@ -68,12 +68,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Cuboid.cs" />
     <Compile Include="Face.cs" />
     <Compile Include="GlobalSettings.cs" />
     <Compile Include="PhongWindow.xaml.cs">
       <DependentUpon>PhongWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ScanLineData.cs" />
+    <Compile Include="Sphere.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

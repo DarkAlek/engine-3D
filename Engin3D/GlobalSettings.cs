@@ -30,7 +30,7 @@ namespace Engin3D
 
         public static viewMode currentMode = viewMode.meshMode;
         public static List<effectMode> effectModes = new List<effectMode>();
-        public static List<algorithm> algorithmsUsed = new List<algorithm>() { algorithm.backfaceCulling };
+        public static List<algorithm> algorithmsUsed = new List<algorithm>();
 
         public static Vector3 lightPos = new Vector3(0, 1, 1);
         public static Vector3 ambientColor = new Vector3(0.06f, 0.196f, 0.06f);

@@ -1,22 +1,17 @@
 ﻿// Mesh.cs
 using SharpDX;
+using System.ComponentModel;
 
 namespace Engin3D
 {
-    public class Mesh
+    public interface Mesh
     {
-        public string Name { get; set; }
-        public Vertex[] Vertices { get; private set; }
-        public Face[] Faces { get; set; }
-        public Vector3 Position { get; set; }
-        public Vector3 Rotation { get; set; }
-
-        public Mesh(string name, int verticesCount, int facesCount)
-        {
-            Vertices = new Vertex[verticesCount];
-            Faces = new Face[facesCount];
-            Name = name;
-        }
+        string Name { get; set; }
+        Vector3 Rotation{ get; set; }
+        Vector3 Position { get; set; }
+        Vertex[] Vertices { get; set; }
+        Face[] Faces { get; set; }
+        void InitMesh();
     }
 
     public struct Vertex
